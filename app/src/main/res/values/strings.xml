@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Random Music Player</string>
+    <string name="casting_to_device">Casting to %1$s</string>
+    <string name="label_stop">Stop</string>
+    <string name="label_pause">Pause</string>
+    <string name="label_play">Play</string>
+    <string name="label_previous">Previous</string>
+    <string name="label_next">Next</string>
+</resources>

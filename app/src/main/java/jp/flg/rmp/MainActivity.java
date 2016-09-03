@@ -1,28 +1,21 @@
 package jp.flg.rmp;
 
-import android.app.ActivityManager;
+import android.app.Activity;
 import android.content.ComponentName;
-import android.graphics.BitmapFactory;
-import android.os.Build;
+import android.media.browse.MediaBrowser;
+import android.media.session.MediaController;
+import android.media.session.MediaSession;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.RemoteException;
-import android.support.annotation.NonNull;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private static final String TAG = LogHelper.makeLogTag(MainActivity.class);
 
-    private MediaBrowserCompat mMediaBrowser;
-    private final MediaBrowserCompat.ConnectionCallback mConnectionCallback =
-            new MediaBrowserCompat.ConnectionCallback() {
+    private MediaBrowser mMediaBrowser;
+    private final MediaBrowser.ConnectionCallback mConnectionCallback =
+            new MediaBrowser.ConnectionCallback() {
                 @Override
                 public void onConnected() {
                     LogHelper.d(TAG, "onConnected");
@@ -39,8 +32,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         LogHelper.d(TAG, "Activity onCreate");
 
-        mMediaBrowser = new MediaBrowserCompat(this,
-                new ComponentName(this, MusicService.class), mConnectionCallback, null);
+        mMediaBrowser = new MediaBrowser(this, new ComponentName(this, MusicService.class), mConnectionCallback, null);
 
         setContentView(R.layout.activity_player);
 
@@ -48,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         random_play_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 LogHelper.d(TAG, "Random play");
-                getSupportMediaController().getTransportControls().playFromSearch("", null);
+                getMediaController().getTransportControls().playFromSearch("", null);
             }
         });
 
@@ -56,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         stop_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 LogHelper.d(TAG, "stop");
-                getSupportMediaController().getTransportControls().stop();
+                getMediaController().getTransportControls().stop();
             }
         });
     }
@@ -75,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
         mMediaBrowser.disconnect();
     }
 
-    private void connectToSession(MediaSessionCompat.Token token) throws RemoteException {
-        MediaControllerCompat mediaController = new MediaControllerCompat(this, token);
-        setSupportMediaController(mediaController);
+    private void connectToSession(MediaSession.Token token) throws RemoteException {
+        MediaController mediaController = new MediaController(this, token);
+        setMediaController(mediaController);
     }
 }

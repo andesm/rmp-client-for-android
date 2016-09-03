@@ -2,7 +2,7 @@ package jp.flg.rmp;
 
 
 import android.content.Context;
-import android.support.v4.media.MediaMetadataCompat;
+import android.media.MediaMetadata;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -47,24 +47,24 @@ public class MusicProvider {
 
     private interface RmpRESTfulApi {
         @GET("/app/rmp/music/")
-        public Observable<List<RmpData>> get(@Header("X-CSRFToken") String csrfToken);
+        Observable<List<RmpData>> get(@Header("X-CSRFToken") String csrfToken);
 
         @PUT("/app/rmp/music/{id}/")
-        public Observable<ResponseBody> put(@Header("X-CSRFToken") String csrfToken, @Path("id") String id, @Body RmpData rmpData);
+        Observable<ResponseBody> put(@Header("X-CSRFToken") String csrfToken, @Path("id") String id, @Body RmpData rmpData);
 
         @FormUrlEncoded
         @POST("/app/rmp/api-auth/login/")
-        public Observable<ResponseBody> postLogin(@Field("next") String next, @Field("csrfmiddlewaretoken") String csrfToken, @Field("username") String username, @Field("password") String password, @Field("submit") String submit);
+        Observable<ResponseBody> postLogin(@Field("next") String next, @Field("csrfmiddlewaretoken") String csrfToken, @Field("username") String username, @Field("password") String password, @Field("submit") String submit);
 
         @GET("/app/rmp/api-auth/login/")
-        public Observable<ResponseBody> getLogin();
+        Observable<ResponseBody> getLogin();
     }
 
     private Retrofit retrofit;
     private String csrfToken;
 
     private Realm realm;
-    private List<RmpData> rmpDataList = new ArrayList<RmpData>();
+    private List<RmpData> rmpDataList = new ArrayList<>();
     private Iterator<RmpData> rmpDataIterator;
     private RmpData nowMusic;
 
@@ -150,7 +150,7 @@ public class MusicProvider {
     }
 
 
-    public MediaMetadataCompat getNowMusic() {
+    public MediaMetadata getNowMusic() {
         if (rmpDataList.isEmpty()) {
             return null;
         }
@@ -163,7 +163,7 @@ public class MusicProvider {
         } while(!nowMusic.isPlay());
         realm.commitTransaction();
 
-        return nowMusic.toMediaMetadataCompat();
+        return nowMusic.toMediaMetadata();
     }
 
 

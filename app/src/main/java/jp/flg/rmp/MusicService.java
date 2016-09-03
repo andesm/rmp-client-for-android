@@ -1,23 +1,20 @@
 package jp.flg.rmp;
 
 import android.content.Intent;
+import android.media.MediaMetadata;
+import android.media.browse.MediaBrowser;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.os.RemoteException;
+import android.service.media.MediaBrowserService;
 import android.support.annotation.NonNull;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaBrowserServiceCompat;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaButtonReceiver;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 
-import java.lang.ref.WeakReference;
 import java.util.List;
 
-public class MusicService extends MediaBrowserServiceCompat implements
+public class MusicService extends MediaBrowserService implements
         Playback.PlaybackServiceCallback {
+    private static final String TAG = LogHelper.makeLogTag(MusicService.class);
 
     public static final String MEDIA_ID_ROOT = "__ROOT__";
     // Extra on MediaSession that contains the Cast device name currently connected to
@@ -34,10 +31,9 @@ public class MusicService extends MediaBrowserServiceCompat implements
     // A value of a CMD_NAME key that indicates that the music playback should switch
     // to local playback from cast playback.
     public static final String CMD_STOP = "CMD_STOP";
-    private static final String TAG = LogHelper.makeLogTag(MusicService.class);
 
     private MusicProvider mMusicProvider;
-    private MediaSessionCompat mSession;
+    private MediaSession mSession;
     private Playback mPlayback;
     private MediaNotificationManager mMediaNotificationManager;
 
@@ -50,11 +46,11 @@ public class MusicService extends MediaBrowserServiceCompat implements
         mPlayback = new Playback(this, mMusicProvider, this);
 
         // Start a new MediaSession
-        mSession = new MediaSessionCompat(this, "MusicService");
+        mSession = new MediaSession(this, "MusicService");
         setSessionToken(mSession.getSessionToken());
         mSession.setCallback(mPlayback.getMediaSessionCallback());
-        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
         mPlayback.updatePlaybackState(null);
 
@@ -64,6 +60,7 @@ public class MusicService extends MediaBrowserServiceCompat implements
             throw new IllegalStateException("Could not create a MediaNotificationManager", e);
         }
     }
+
 
     public int onStartCommand(Intent startIntent, int flags, int startId) {
         LogHelper.d(TAG, "onStartCommand");
@@ -75,9 +72,6 @@ public class MusicService extends MediaBrowserServiceCompat implements
                 if (CMD_PAUSE.equals(command)) {
                     mPlayback.handlePauseRequest();
                 }
-            } else {
-                // Try to handle the intent as a media button event wrapped by MediaButtonReceiver
-                MediaButtonReceiver.handleIntent(mSession, startIntent);
             }
         }
 
@@ -98,9 +92,9 @@ public class MusicService extends MediaBrowserServiceCompat implements
         return new BrowserRoot(MEDIA_ID_ROOT, null);
     }
 
-    public void onLoadChildren(@NonNull final String parentMediaId,
-                               @NonNull final Result<List<MediaBrowserCompat.MediaItem>> result) {
-        LogHelper.d(TAG, "OnLoadChildren: parentMediaId=", parentMediaId);
+    @Override
+    public void onLoadChildren(@NonNull String parentMediaId, @NonNull Result <List<MediaBrowser.MediaItem>> result) {
+        LogHelper.d(TAG, "OnLoadChildren", parentMediaId);
     }
 
     @Override
@@ -123,12 +117,12 @@ public class MusicService extends MediaBrowserServiceCompat implements
     }
 
     @Override
-    public void onPlaybackStateUpdated(PlaybackStateCompat newState) {
+    public void onPlaybackStateUpdated(PlaybackState newState) {
         mSession.setPlaybackState(newState);
     }
 
     @Override
-    public void onMetadataChanged(MediaMetadataCompat metadata) {
+    public void onMetadataChanged(MediaMetadata metadata) {
         mSession.setMetadata(metadata);
     }
 }

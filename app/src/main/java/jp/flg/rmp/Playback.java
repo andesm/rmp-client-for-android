@@ -5,16 +5,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.media.MediaMetadata;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.net.Uri;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.os.SystemClock;
-import android.support.v4.media.MediaMetadataCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import android.support.annotation.NonNull;
+import android.view.KeyEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,8 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
     private static final int AUDIO_NO_FOCUS_CAN_DUCK = 1;
     // we have full audio focus
     private static final int AUDIO_FOCUSED = 2;
+
+    private static final int DOUBLE_CLICK = 400;
 
     private final Context mContext;
     private final MusicProvider mMusicProvider;
@@ -55,12 +58,12 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
         this.mContext = context;
         this.mMusicProvider = mMusicProvider;
         this.mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        this.mState = PlaybackStateCompat.STATE_NONE;
+        this.mState = PlaybackState.STATE_NONE;
         mServiceCallback = serviceCallback;
         mMediaSessionCallback = new MediaSessionCallback();
     }
 
-    public MediaSessionCompat.Callback getMediaSessionCallback() {
+    public MediaSession.Callback getMediaSessionCallback() {
         return mMediaSessionCallback;
     }
 
@@ -96,7 +99,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
 
             // If we are playing, we need to reset media player by calling configMediaPlayerState
             // with mAudioFocus properly set.
-            if (mState == PlaybackStateCompat.STATE_PLAYING && !canDuck) {
+            if (mState == PlaybackState.STATE_PLAYING && !canDuck) {
                 // If we don't have audio focus and can't duck, we save the information that
                 // we were playing, so that we can resume playback once we get the focus back.
                 mPlayOnFocusGain = true;
@@ -132,17 +135,33 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
         void onPlaybackStart();
         void onNotificationRequired();
         void onPlaybackStop();
-        void onPlaybackStateUpdated(PlaybackStateCompat newState);
-        void onMetadataChanged(MediaMetadataCompat metadata);
+        void onPlaybackStateUpdated(PlaybackState newState);
+        void onMetadataChanged(MediaMetadata metadata);
     }
 
-    private class MediaSessionCallback extends MediaSessionCompat.Callback {
+    private class MediaSessionCallback extends MediaSession.Callback {
+        private long mLastClickTime;
 
         @Override
-        public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
-            LogHelper.d(TAG, "onMediaButtonEvent called: " + mediaButtonIntent.getAction() + mediaButtonIntent.getType());
-            return false;
+        public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
+            KeyEvent event = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+            LogHelper.d(TAG, "onMediaButtonEvent called: " + event);
+            if (event.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK && event.getAction() == KeyEvent.ACTION_DOWN) {
+                long eventTime = event.getEventTime();
+                LogHelper.d(TAG, "eventTime - mLastClickTime = " + (eventTime - mLastClickTime));
+                if (eventTime - mLastClickTime < DOUBLE_CLICK) {
+                    LogHelper.d(TAG, "skip");
+                    mState = PlaybackState.STATE_STOPPED;
+                    onSkipToNext();
+                    mLastClickTime = eventTime;
+                    return true;
+                } else {
+                    mLastClickTime = eventTime;
+                }
+            }
+            return super.onMediaButtonEvent(mediaButtonIntent);
         }
+
 
         @Override
         public void onPlayFromSearch(String query, Bundle extras) {
@@ -194,15 +213,15 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
         tryToGetAudioFocus();
         registerAudioNoisyReceiver();
 
-        if (mState == PlaybackStateCompat.STATE_PAUSED && mMediaPlayer != null) {
+        if (mState == PlaybackState.STATE_PAUSED && mMediaPlayer != null) {
             configMediaPlayerState();
         } else {
-            MediaMetadataCompat track = mMusicProvider.getNowMusic();
+            MediaMetadata track = mMusicProvider.getNowMusic();
             if (track == null) {
                 return;
             }
 
-            mState = PlaybackStateCompat.STATE_STOPPED;
+            mState = PlaybackState.STATE_STOPPED;
             relaxResources(false); // release everything except MediaPlayer
 
             String source = Environment.getExternalStorageDirectory() + "/Music/rmp/" + track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
@@ -215,7 +234,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
             try {
                 createMediaPlayerIfNeeded();
 
-                mState = PlaybackStateCompat.STATE_BUFFERING;
+                mState = PlaybackState.STATE_BUFFERING;
                 mMediaPlayer.setDataSource(mContext.getApplicationContext(), source_uri);
                 mMediaPlayer.prepareAsync();
                 updatePlaybackState(null);
@@ -234,7 +253,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
     public void handlePauseRequest() {
         LogHelper.d(TAG, "handlePauseRequest: mState=" + mState);
         if (isPlaying()) {
-            if (mState == PlaybackStateCompat.STATE_PLAYING) {
+            if (mState == PlaybackState.STATE_PLAYING) {
                 // Pause media player and cancel the 'foreground service' state.
                 if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
                     mMediaPlayer.pause();
@@ -244,7 +263,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
                 relaxResources(false);
                 giveUpAudioFocus();
             }
-            mState = PlaybackStateCompat.STATE_PAUSED;
+            mState = PlaybackState.STATE_PAUSED;
             updatePlaybackState(null);
             unregisterAudioNoisyReceiver();
             mServiceCallback.onPlaybackStop();
@@ -254,7 +273,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
     public void handleStopRequest(String withError) {
         LogHelper.d(TAG, "handleStopRequest: mState=" + mState + " error=", withError);
 
-        mState = PlaybackStateCompat.STATE_STOPPED;
+        mState = PlaybackState.STATE_STOPPED;
         updatePlaybackState(null);
         // Give up Audio focus
         giveUpAudioFocus();
@@ -270,34 +289,33 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
         LogHelper.d(TAG, "updatePlaybackState, playback state=" + mState);
         long position = getCurrentStreamPosition();
 
-        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+        PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
                 .setActions(getAvailableActions());
 
         int state = mState;
 
         if (error != null) {
             stateBuilder.setErrorMessage(error);
-            state = PlaybackStateCompat.STATE_ERROR;
+            state = PlaybackState.STATE_ERROR;
         }
         stateBuilder.setState(state, position, 1.0f, SystemClock.elapsedRealtime());
 
         mServiceCallback.onPlaybackStateUpdated(stateBuilder.build());
 
-        if (state == PlaybackStateCompat.STATE_PLAYING ||
-                state == PlaybackStateCompat.STATE_PAUSED) {
+        if (state == PlaybackState.STATE_PLAYING ||
+                state == PlaybackState.STATE_PAUSED) {
             mServiceCallback.onNotificationRequired();
         }
     }
 
     private long getAvailableActions() {
         long actions =
-                PlaybackStateCompat.ACTION_PLAY |
-                        PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID |
-                        PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH |
-                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT;
+                PlaybackState.ACTION_PLAY |
+                        PlaybackState.ACTION_PLAY_FROM_SEARCH |
+                        PlaybackState.ACTION_SKIP_TO_PREVIOUS |
+                        PlaybackState.ACTION_SKIP_TO_NEXT;
         if (isPlaying()) {
-            actions |= PlaybackStateCompat.ACTION_PAUSE;
+            actions |= PlaybackState.ACTION_PAUSE;
         }
         return actions;
     }
@@ -331,7 +349,7 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
         LogHelper.d(TAG, "configMediaPlayerState. mAudioFocus=", mAudioFocus);
         if (mAudioFocus == AUDIO_NO_FOCUS_NO_DUCK) {
             // If we don't have audio focus and can't duck, we have to pause,
-            if (mState == PlaybackStateCompat.STATE_PLAYING) {
+            if (mState == PlaybackState.STATE_PLAYING) {
                 handlePauseRequest();
             }
         } else {  // we have audio focus:
@@ -349,10 +367,10 @@ public class Playback implements AudioManager.OnAudioFocusChangeListener, MediaP
                             mCurrentPosition);
                     if (mCurrentPosition == mMediaPlayer.getCurrentPosition()) {
                         mMediaPlayer.start();
-                        mState = PlaybackStateCompat.STATE_PLAYING;
+                        mState = PlaybackState.STATE_PLAYING;
                     } else {
                         mMediaPlayer.seekTo(mCurrentPosition);
-                        mState = PlaybackStateCompat.STATE_BUFFERING;
+                        mState = PlaybackState.STATE_BUFFERING;
                     }
                 }
                 mPlayOnFocusGain = false;

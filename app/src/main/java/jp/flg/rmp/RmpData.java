@@ -1,7 +1,7 @@
 package jp.flg.rmp;
 
 
-import android.support.v4.media.MediaMetadataCompat;
+import android.media.MediaMetadata;
 
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
@@ -93,17 +93,17 @@ public class RmpData extends RealmObject {
         score = count + repeat - (now + skip);
     }
 
-    public MediaMetadataCompat toMediaMetadataCompat() {
-        return new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, getStringId())
+    public MediaMetadata toMediaMetadata() {
+        return new MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, getStringId())
                 .putString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE, file)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
-                .putString(MediaMetadataCompat.METADATA_KEY_GENRE, genre)
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
-                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, trackNumber)
-                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, totalTrackCount)
+                .putString(MediaMetadata.METADATA_KEY_ALBUM, album)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, artist)
+                .putLong(MediaMetadata.METADATA_KEY_DURATION, duration)
+                .putString(MediaMetadata.METADATA_KEY_GENRE, genre)
+                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+                .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, trackNumber)
+                .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, totalTrackCount)
                 .build();
     }
 

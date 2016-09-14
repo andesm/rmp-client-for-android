@@ -32,7 +32,7 @@ public class RmpData extends RealmObject {
     private int repeat;
     private int score;
 
-     public void updateRmpData(RmpData rmpData) {
+    public void updateRmpData(RmpData rmpData) {
         owner = rmpData.owner;
         site = rmpData.site;
         file = rmpData.file;

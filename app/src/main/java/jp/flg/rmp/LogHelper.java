@@ -2,15 +2,16 @@ package jp.flg.rmp;
 
 import android.util.Log;
 
-public class LogHelper {
+class LogHelper {
 
     private static final String LOG_PREFIX = "Rmp_";
     private static final int LOG_PREFIX_LENGTH = LOG_PREFIX.length();
     private static final int MAX_LOG_TAG_LENGTH = 23;
 
-    public static String makeLogTag(String str) {
+    private static String makeLogTag(String str) {
         if (str.length() > MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH) {
-            return LOG_PREFIX + str.substring(0, MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH - 1);
+            return LOG_PREFIX +
+                    str.substring(0, MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH - 1);
         }
 
         return LOG_PREFIX + str;
@@ -57,24 +58,23 @@ public class LogHelper {
         log(tag, Log.ERROR, t, messages);
     }
 
-    public static void log(String tag, int level, Throwable t, Object... messages) {
+    private static void log(String tag, int level, Throwable t, Object... messages) {
         String message;
-        if (true) {
-            if (t == null && messages != null && messages.length == 1) {
-                // handle this common case without the extra cost of creating a stringbuffer:
-                message = messages[0].toString();
-            } else {
-                StringBuilder sb = new StringBuilder();
-                if (messages != null) for (Object m : messages) {
-                    sb.append(m);
+        if (t == null && messages != null && messages.length == 1) {
+            message = messages[0].toString();
+        } else {
+            StringBuilder sb = new StringBuilder();
+            if (messages != null) {
+                for (Object o : messages) {
+                    sb.append(o);
                 }
-                if (t != null) {
-                    sb.append("\n").append(Log.getStackTraceString(t));
-                }
-                message = sb.toString();
             }
-            Log.println(level, tag, message);
+            if (t != null) {
+                sb.append("\n").append(Log.getStackTraceString(t));
+            }
+            message = sb.toString();
         }
+        Log.println(level, tag, message);
     }
 }
 

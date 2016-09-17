@@ -1,22 +1,22 @@
 package jp.flg.rmp;
 
+import android.app.Service;
 import android.content.Intent;
 import android.media.MediaMetadata;
-import android.media.browse.MediaBrowser;
+import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.service.media.MediaBrowserService;
 import android.support.annotation.NonNull;
 
 import java.util.List;
+import java.util.Objects;
+
+import jp.flg.rmp.Playback.PlaybackServiceCallback;
 
 public class MusicService extends MediaBrowserService implements
-        Playback.PlaybackServiceCallback {
-    private static final String TAG = LogHelper.makeLogTag(MusicService.class);
-
-    public static final String MEDIA_ID_ROOT = "__ROOT__";
+        PlaybackServiceCallback {
     // Extra on MediaSession that contains the Cast device name currently connected to
     public static final String EXTRA_CONNECTED_CAST = "jp.flg.rmp.CAST_NAME";
     // The action of the incoming Intent indicating that it contains a command
@@ -31,8 +31,8 @@ public class MusicService extends MediaBrowserService implements
     // A value of a CMD_NAME key that indicates that the music playback should switch
     // to local playback from cast playback.
     public static final String CMD_STOP = "CMD_STOP";
-
-    private MusicProvider mMusicProvider;
+    private static final String MEDIA_ID_ROOT = "__ROOT__";
+    private static final String TAG = LogHelper.makeLogTag(MusicService.class);
     private MediaSession mSession;
     private Playback mPlayback;
     private MediaNotificationManager mMediaNotificationManager;
@@ -42,7 +42,7 @@ public class MusicService extends MediaBrowserService implements
         super.onCreate();
         LogHelper.d(TAG, "onCreate");
 
-        mMusicProvider = new MusicProvider(this);
+        MusicProvider mMusicProvider = new MusicProvider(this);
         mPlayback = new Playback(this, mMusicProvider, this);
 
         // Start a new MediaSession
@@ -54,30 +54,28 @@ public class MusicService extends MediaBrowserService implements
 
         mPlayback.updatePlaybackState(null);
 
-        try {
-            mMediaNotificationManager = new MediaNotificationManager(this);
-        } catch (RemoteException e) {
-            throw new IllegalStateException("Could not create a MediaNotificationManager", e);
-        }
+        mMediaNotificationManager = new MediaNotificationManager(this);
     }
 
 
+    @Override
     public int onStartCommand(Intent startIntent, int flags, int startId) {
         LogHelper.d(TAG, "onStartCommand");
 
         if (startIntent != null) {
             String action = startIntent.getAction();
             String command = startIntent.getStringExtra(CMD_NAME);
-            if (ACTION_CMD.equals(action)) {
-                if (CMD_PAUSE.equals(command)) {
+            if (Objects.equals(ACTION_CMD, action)) {
+                if (Objects.equals(CMD_PAUSE, command)) {
                     mPlayback.handlePauseRequest();
                 }
             }
         }
 
-        return START_STICKY;
+        return Service.START_STICKY;
     }
 
+    @Override
     public void onDestroy() {
         LogHelper.d(TAG, "onDestroy");
         mPlayback.handleStopRequest(null);
@@ -85,6 +83,7 @@ public class MusicService extends MediaBrowserService implements
         mSession.release();
     }
 
+    @Override
     public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid,
                                  Bundle rootHints) {
         LogHelper.d(TAG, "OnGetRoot: clientPackageName=" + clientPackageName,
@@ -93,7 +92,8 @@ public class MusicService extends MediaBrowserService implements
     }
 
     @Override
-    public void onLoadChildren(@NonNull String parentMediaId, @NonNull Result <List<MediaBrowser.MediaItem>> result) {
+    public void onLoadChildren(@NonNull String parentMediaId,
+                               @NonNull Result<List<MediaItem>> result) {
         LogHelper.d(TAG, "OnLoadChildren", parentMediaId);
     }
 

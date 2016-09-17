@@ -3,27 +3,27 @@ package jp.flg.rmp;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.media.browse.MediaBrowser;
+import android.media.browse.MediaBrowser.ConnectionCallback;
 import android.media.session.MediaController;
-import android.media.session.MediaSession;
+import android.media.session.MediaSession.Token;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
+
+import jp.flg.rmp.R.id;
+import jp.flg.rmp.R.layout;
 
 public class MainActivity extends Activity {
     private static final String TAG = LogHelper.makeLogTag(MainActivity.class);
 
     private MediaBrowser mMediaBrowser;
-    private final MediaBrowser.ConnectionCallback mConnectionCallback =
-            new MediaBrowser.ConnectionCallback() {
+    private final ConnectionCallback mConnectionCallback =
+            new ConnectionCallback() {
                 @Override
                 public void onConnected() {
                     LogHelper.d(TAG, "onConnected");
-                    try {
-                        connectToSession(mMediaBrowser.getSessionToken());
-                    } catch (RemoteException e) {
-                        LogHelper.e(TAG, e, "could not connect media controller");
-                    }
+                    connectToSession(mMediaBrowser.getSessionToken());
                 }
             };
 
@@ -32,20 +32,24 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         LogHelper.d(TAG, "Activity onCreate");
 
-        mMediaBrowser = new MediaBrowser(this, new ComponentName(this, MusicService.class), mConnectionCallback, null);
+        mMediaBrowser = new MediaBrowser(this,
+                new ComponentName(this, MusicService.class),
+                mConnectionCallback, null);
 
-        setContentView(R.layout.activity_player);
+        setContentView(layout.activity_player);
 
-        final Button random_play_button = (Button) findViewById(R.id.random_play);
-        random_play_button.setOnClickListener(new View.OnClickListener() {
+        Button randomPlayButton = (Button) findViewById(id.random_play);
+        randomPlayButton.setOnClickListener(new OnClickListener() {
+            @Override
             public void onClick(View v) {
                 LogHelper.d(TAG, "Random play");
                 getMediaController().getTransportControls().playFromSearch("", null);
             }
         });
 
-        final Button stop_button = (Button) findViewById(R.id.stop);
-        stop_button.setOnClickListener(new View.OnClickListener() {
+        Button stopButton = (Button) findViewById(id.stop);
+        stopButton.setOnClickListener(new OnClickListener() {
+            @Override
             public void onClick(View v) {
                 LogHelper.d(TAG, "stop");
                 getMediaController().getTransportControls().stop();
@@ -67,7 +71,7 @@ public class MainActivity extends Activity {
         mMediaBrowser.disconnect();
     }
 
-    private void connectToSession(MediaSession.Token token) throws RemoteException {
+    private void connectToSession(Token token) {
         MediaController mediaController = new MediaController(this, token);
         setMediaController(mediaController);
     }

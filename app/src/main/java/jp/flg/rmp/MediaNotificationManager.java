@@ -1,6 +1,8 @@
 package jp.flg.rmp;
 
 import android.app.Notification;
+import android.app.Notification.Action.Builder;
+import android.app.Notification.MediaStyle;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -8,31 +10,37 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.res.Resources;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources.Theme;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
-import android.media.session.MediaSession;
+import android.media.session.MediaController.Callback;
+import android.media.session.MediaController.TransportControls;
+import android.media.session.MediaSession.Token;
 import android.media.session.PlaybackState;
-import android.os.RemoteException;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+import jp.flg.rmp.R.attr;
+import jp.flg.rmp.R.drawable;
+import jp.flg.rmp.R.string;
 
 public class MediaNotificationManager extends BroadcastReceiver {
+    private static final String ACTION_PAUSE = "jp.flg.rmp.pause";
+    private static final String ACTION_PLAY = "jp.flg.rmp.play";
+    private static final String ACTION_PREV = "jp.flg.rmp.prev";
+    private static final String ACTION_NEXT = "jp.flg.rmp.next";
+    private static final String ACTION_STOP = "jp.flg.rmp.stop";
     private static final String TAG = LogHelper.makeLogTag(MediaNotificationManager.class);
-
-    private static final String EXTRA_START_FULLSCREEN = "jp.flg.rmp.EXTRA_START_FULLSCREEN";
-    private static final String EXTRA_CURRENT_MEDIA_DESCRIPTION = "jp.flg.rmp.CURRENT_MEDIA_DESCRIPTION";
-
-    public static final String ACTION_PAUSE = "jp.flg.rmp.pause";
-    public static final String ACTION_PLAY = "jp.flg.rmp.play";
-    public static final String ACTION_PREV = "jp.flg.rmp.prev";
-    public static final String ACTION_NEXT = "jp.flg.rmp.next";
-    public static final String ACTION_STOP = "jp.flg.rmp.stop";
-
+    private static final String EXTRA_START_FULLSCREEN =
+            "jp.flg.rmp.EXTRA_START_FULLSCREEN";
+    private static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
+            "jp.flg.rmp.CURRENT_MEDIA_DESCRIPTION";
     private static final int NOTIFICATION_ID = 412;
     private static final int REQUEST_CODE = 100;
     private final MusicService mService;
@@ -43,13 +51,15 @@ public class MediaNotificationManager extends BroadcastReceiver {
     private final PendingIntent mNextIntent;
     private final PendingIntent mStopCastIntent;
     private final int mNotificationColor;
-    private MediaSession.Token mSessionToken;
+    @Nullable
+    private Token mSessionToken;
+    @Nullable
     private MediaController mController;
-    private MediaController.TransportControls mTransportControls;
+    private boolean mStarted;
+    private TransportControls mTransportControls;
     private PlaybackState mPlaybackState;
     private MediaMetadata mMetadata;
-    private boolean mStarted = false;
-    private final MediaController.Callback mCb = new MediaController.Callback() {
+    private final Callback mCb = new Callback() {
         @Override
         public void onPlaybackStateChanged(@NonNull PlaybackState state) {
             mPlaybackState = state;
@@ -79,22 +89,22 @@ public class MediaNotificationManager extends BroadcastReceiver {
         public void onSessionDestroyed() {
             super.onSessionDestroyed();
             LogHelper.d(TAG, "Session was destroyed, resetting to the new session token");
-            try {
-                updateSessionToken();
-            } catch (RemoteException e) {
-                LogHelper.e(TAG, e, "could not connect media controller");
-            }
+            updateSessionToken();
         }
     };
 
-    public MediaNotificationManager(MusicService service) throws RemoteException {
+    public MediaNotificationManager(MusicService service) {
         mService = service;
+        mSessionToken = null;
+        mController = null;
+        mStarted = false;
         updateSessionToken();
 
-        mNotificationColor = getThemeColor(mService, R.attr.colorPrimary,
+        mNotificationColor = getThemeColor(mService, attr.colorPrimary,
                 Color.DKGRAY);
 
-        mNotificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager =
+                (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
 
         String pkg = mService.getPackageName();
         mPauseIntent = PendingIntent.getBroadcast(mService, REQUEST_CODE,
@@ -115,7 +125,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     }
 
     public void startNotification() {
-        if (!mStarted) {
+        if (!mStarted && mController != null) {
             mMetadata = mController.getMetadata();
             mPlaybackState = mController.getPlaybackState();
 
@@ -138,13 +148,13 @@ public class MediaNotificationManager extends BroadcastReceiver {
     }
 
     public void stopNotification() {
-        if (mStarted) {
+        if (mStarted && mController != null) {
             mStarted = false;
             mController.unregisterCallback(mCb);
             try {
                 mNotificationManager.cancel(NOTIFICATION_ID);
                 mService.unregisterReceiver(this);
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException ignored) {
                 // ignore if the receiver is not registered.
             }
             mService.stopForeground(true);
@@ -153,7 +163,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        final String action = intent.getAction();
+        String action = intent.getAction();
         LogHelper.d(TAG, "Received intent with action " + action);
         switch (action) {
             case ACTION_PAUSE:
@@ -169,18 +179,18 @@ public class MediaNotificationManager extends BroadcastReceiver {
                 mTransportControls.skipToPrevious();
                 break;
             case ACTION_STOP:
-                Intent i = new Intent(context, MusicService.class);
-                i.setAction(MusicService.ACTION_CMD);
-                i.putExtra(MusicService.CMD_NAME, MusicService.CMD_STOP);
-                mService.startService(i);
+                Intent newIntent = new Intent(context, MusicService.class);
+                newIntent.setAction(MusicService.ACTION_CMD);
+                newIntent.putExtra(MusicService.CMD_NAME, MusicService.CMD_STOP);
+                mService.startService(newIntent);
                 break;
             default:
                 LogHelper.w(TAG, "Unknown intent ignored. Action=", action);
         }
     }
 
-    private void updateSessionToken() throws RemoteException {
-        MediaSession.Token freshToken = mService.getSessionToken();
+    private void updateSessionToken() {
+        Token freshToken = mService.getSessionToken();
         if (mSessionToken == null && freshToken != null ||
                 mSessionToken != null && !mSessionToken.equals(freshToken)) {
             if (mController != null) {
@@ -197,7 +207,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
         }
     }
 
-    private PendingIntent createContentIntent(MediaDescription description) {
+    private PendingIntent createContentIntent(Parcelable description) {
         Intent openUI = new Intent(mService, MainActivity.class);
         openUI.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         openUI.putExtra(EXTRA_START_FULLSCREEN, true);
@@ -218,11 +228,11 @@ public class MediaNotificationManager extends BroadcastReceiver {
 
         // If skip to previous action is enabled
         if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0) {
-            Notification.Action.Builder action = new Notification.Action.Builder(
+            Builder action = new Builder(
                     Icon.createWithResource(
                             mService.getApplicationContext(),
-                            R.drawable.ic_skip_previous_white_24dp),
-                    mService.getString(R.string.label_previous),
+                            drawable.ic_skip_previous_white_24dp),
+                    mService.getString(string.label_previous),
                     mPreviousIntent);
             notificationBuilder.addAction(action.build());
         }
@@ -231,11 +241,11 @@ public class MediaNotificationManager extends BroadcastReceiver {
 
         // If skip to next action is enabled
         if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_NEXT) != 0) {
-            Notification.Action.Builder action = new Notification.Action.Builder(
+            Builder action = new Builder(
                     Icon.createWithResource(
                             mService.getApplicationContext(),
-                            R.drawable.ic_skip_next_white_24dp),
-                    mService.getString(R.string.label_next),
+                            drawable.ic_skip_next_white_24dp),
+                    mService.getString(string.label_next),
                     mNextIntent);
             notificationBuilder.addAction(action.build());
         }
@@ -243,13 +253,13 @@ public class MediaNotificationManager extends BroadcastReceiver {
         MediaDescription description = mMetadata.getDescription();
 
         notificationBuilder
-                .setStyle(new Notification.MediaStyle()
+                .setStyle(new MediaStyle()
                         .setShowActionsInCompactView(
                                 new int[]{0, 1, 2})  // show only play/pause in compact view
                         .setMediaSession(mSessionToken))
                 //
                 .setColor(mNotificationColor)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(drawable.ic_notification)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setUsesChronometer(true)
                 .setContentIntent(createContentIntent(description))
@@ -260,13 +270,13 @@ public class MediaNotificationManager extends BroadcastReceiver {
             String castName = mController.getExtras().getString(MusicService.EXTRA_CONNECTED_CAST);
             if (castName != null) {
                 String castInfo = mService.getResources()
-                        .getString(R.string.casting_to_device, castName);
+                        .getString(string.casting_to_device, castName);
                 notificationBuilder.setSubText(castInfo);
-                Notification.Action.Builder builder = new Notification.Action.Builder(
+                Builder builder = new Builder(
                         Icon.createWithResource(
                                 mService.getApplicationContext(),
-                                R.drawable.ic_close_black_24dp),
-                        mService.getString(R.string.label_stop),
+                                drawable.ic_close_black_24dp),
+                        mService.getString(string.label_stop),
                         mStopCastIntent);
                 notificationBuilder.addAction(builder.build());
             }
@@ -281,22 +291,21 @@ public class MediaNotificationManager extends BroadcastReceiver {
         int icon;
         PendingIntent intent;
         if (mPlaybackState.getState() == PlaybackState.STATE_PLAYING) {
-            label = mService.getString(R.string.label_pause);
-            icon = R.drawable.ic_pause_white_24dp;
+            label = mService.getString(string.label_pause);
+            icon = drawable.ic_pause_white_24dp;
             intent = mPauseIntent;
         } else {
-            label = mService.getString(R.string.label_play);
-            icon = R.drawable.ic_play_arrow_white_24dp;
+            label = mService.getString(string.label_play);
+            icon = drawable.ic_play_arrow_white_24dp;
             intent = mPlayIntent;
         }
-        Notification.Action.Builder action = new Notification.Action.Builder(
+        Builder action = new Builder(
                 Icon.createWithResource(
                         mService.getApplicationContext(),
                         icon),
                 label,
                 intent);
         builder.addAction(action.build());
-
     }
 
     private int getThemeColor(Context context, int attribute, int defaultColor) {
@@ -307,12 +316,11 @@ public class MediaNotificationManager extends BroadcastReceiver {
             ApplicationInfo applicationInfo =
                     context.getPackageManager().getApplicationInfo(packageName, 0);
             packageContext.setTheme(applicationInfo.theme);
-            Resources.Theme theme = packageContext.getTheme();
+            Theme theme = packageContext.getTheme();
             TypedArray ta = theme.obtainStyledAttributes(new int[]{attribute});
             themeColor = ta.getColor(0, defaultColor);
             ta.recycle();
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+        } catch (NameNotFoundException ignored) {
         }
         return themeColor;
     }

@@ -2,12 +2,12 @@ package jp.flg.rmp;
 
 
 import android.media.MediaMetadata;
+import android.media.MediaMetadata.Builder;
 
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
-public class RmpData extends RealmObject {
-    private static final String TAG = LogHelper.makeLogTag(RmpData.class);
+public class RandomMusicPlayerData extends RealmObject {
 
     @PrimaryKey
     private int id;
@@ -22,9 +22,9 @@ public class RmpData extends RealmObject {
     private String artist;
     private String title;
 
-    private int duration;
-    private int trackNumber;
-    private int totalTrackCount;
+    private long duration;
+    private long trackNumber;
+    private long totalTrackCount;
 
     private int now;
     private int count;
@@ -32,7 +32,7 @@ public class RmpData extends RealmObject {
     private int repeat;
     private int score;
 
-    public void updateRmpData(RmpData rmpData) {
+    public void updateRmpData(RandomMusicPlayerData rmpData) {
         owner = rmpData.owner;
         site = rmpData.site;
         file = rmpData.file;
@@ -74,10 +74,11 @@ public class RmpData extends RealmObject {
 
     public void handleSkipToNext() {
         now += skip + 1;
-        double n = (1 + Math.sqrt(1 + 8 * skip)) / 2 + 1;
-        skip = (int) (((n - 1) * n) / 2);
-        if (0 < repeat)
+        double d = (1.0 + Math.sqrt(1.0 + 8.0 * skip)) / 2.0 + 1.0;
+        skip = (int) ((d - 1.0) * d / 2.0);
+        if (0 < repeat) {
             repeat--;
+        }
         score = count + repeat - (now + skip);
     }
 
@@ -89,12 +90,12 @@ public class RmpData extends RealmObject {
     public void handleCompletion() {
         now++;
         count++;
-        skip = skip / 2;
+        skip /= 2;
         score = count + repeat - (now + skip);
     }
 
     public MediaMetadata toMediaMetadata() {
-        return new MediaMetadata.Builder()
+        return new Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, getStringId())
                 .putString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE, file)
                 .putString(MediaMetadata.METADATA_KEY_ALBUM, album)

@@ -16,6 +16,7 @@ import android.media.session.PlaybackState;
 import android.media.session.PlaybackState.Builder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.os.SystemClock;
@@ -84,7 +85,7 @@ class Playback implements OnAudioFocusChangeListener,
         mMediaSessionCallback = new MediaSessionCallback();
     }
 
-    public Callback getMediaSessionCallback() {
+    Callback getMediaSessionCallback() {
         return mMediaSessionCallback;
     }
 
@@ -182,7 +183,7 @@ class Playback implements OnAudioFocusChangeListener,
         return mPlayOnFocusGain || mMediaPlayer != null && mMediaPlayer.isPlaying();
     }
 
-    public void handlePauseRequest() {
+    void handlePauseRequest() {
         LogHelper.d(TAG, "handlePauseRequest: mState=" + mState);
         if (isPlaying()) {
             if (mState == PlaybackState.STATE_PLAYING) {
@@ -202,7 +203,7 @@ class Playback implements OnAudioFocusChangeListener,
         }
     }
 
-    public void handleStopRequest(String withError) {
+    void handleStopRequest(String withError) {
         LogHelper.d(TAG, "handleStopRequest: mState=" + mState + " error=", withError);
 
         mState = PlaybackState.STATE_STOPPED;
@@ -217,7 +218,7 @@ class Playback implements OnAudioFocusChangeListener,
         updatePlaybackState(withError);
     }
 
-    public void updatePlaybackState(CharSequence error) {
+    void updatePlaybackState(CharSequence error) {
         LogHelper.d(TAG, "updatePlaybackState, playback state=" + mState);
         long position = getCurrentStreamPosition();
 
@@ -357,7 +358,7 @@ class Playback implements OnAudioFocusChangeListener,
         }
     }
 
-    public interface PlaybackServiceCallback {
+    interface PlaybackServiceCallback {
         void onPlaybackStart();
 
         void onNotificationRequired();
@@ -370,7 +371,8 @@ class Playback implements OnAudioFocusChangeListener,
     }
 
     private class MediaSessionCallback extends Callback {
-        private long mLastClickTime;
+        private long lastClickTime;
+        private int numClicks;
 
         @Override
         public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
@@ -380,17 +382,46 @@ class Playback implements OnAudioFocusChangeListener,
                     event.getAction() == KeyEvent.ACTION_DOWN) {
                 long eventTime = event.getEventTime();
                 LogHelper.d(TAG, "eventTime - mLastClickTime = "
-                        + (eventTime - mLastClickTime));
-                if (eventTime - mLastClickTime < DOUBLE_CLICK) {
-                    LogHelper.d(TAG, "skip");
-                    mState = PlaybackState.STATE_STOPPED;
-                    onSkipToNext();
-                    mLastClickTime = eventTime;
-                    return true;
-                } else {
-                    mLastClickTime = eventTime;
+                        + (eventTime - lastClickTime));
+                if (eventTime - lastClickTime < DOUBLE_CLICK) {
+                    numClicks++;
                 }
+                lastClickTime = eventTime;
             }
+
+            final int oldNumClicks = numClicks;
+            CountDownTimer checkIfDone = new CountDownTimer(DOUBLE_CLICK, 10) {
+
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    if (oldNumClicks != numClicks) {
+                        cancel();
+                    }
+                }
+
+                @Override
+                public void onFinish() {
+                    if (oldNumClicks == numClicks) {
+                        LogHelper.d(TAG, "numClicks = " + numClicks);
+                        switch (numClicks) {
+                            case 1:
+                                LogHelper.d(TAG, "skip");
+                                mState = PlaybackState.STATE_STOPPED;
+                                onSkipToNext();
+                                break;
+                            case 2:
+                                LogHelper.d(TAG, "previous");
+                                mState = PlaybackState.STATE_STOPPED;
+                                onSkipToPrevious();
+                                break;
+                            default:
+                        }
+                        numClicks = 0;
+                        lastClickTime = 0;
+                    }
+                }
+            }.start();
+
             return super.onMediaButtonEvent(mediaButtonIntent);
         }
 

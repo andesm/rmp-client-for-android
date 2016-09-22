@@ -7,10 +7,9 @@ import android.media.browse.MediaBrowser.ConnectionCallback;
 import android.media.session.MediaController;
 import android.media.session.MediaSession.Token;
 import android.os.Bundle;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 import jp.flg.rmp.R.id;
 import jp.flg.rmp.R.layout;
 
@@ -38,23 +37,19 @@ public class MainActivity extends Activity {
 
         setContentView(layout.activity_player);
 
-        Button randomPlayButton = (Button) findViewById(id.random_play);
-        randomPlayButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LogHelper.d(TAG, "Random play");
-                getMediaController().getTransportControls().playFromSearch("", null);
-            }
-        });
+        ButterKnife.bind(this);
+    }
 
-        Button stopButton = (Button) findViewById(id.stop);
-        stopButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LogHelper.d(TAG, "stop");
-                getMediaController().getTransportControls().stop();
-            }
-        });
+    @OnClick(id.random_play)
+    public void clickRandomPlay() {
+        LogHelper.d(TAG, "Random play");
+        getMediaController().getTransportControls().playFromSearch("", null);
+    }
+
+    @OnClick(id.stop)
+    public void clickStop() {
+        LogHelper.d(TAG, "stop");
+        getMediaController().getTransportControls().stop();
     }
 
     @Override

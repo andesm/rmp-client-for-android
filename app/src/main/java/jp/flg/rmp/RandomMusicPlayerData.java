@@ -32,7 +32,7 @@ public class RandomMusicPlayerData extends RealmObject {
     private int repeat;
     private int score;
 
-    public void updateRmpData(RandomMusicPlayerData rmpData) {
+    void updateRmpData(RandomMusicPlayerData rmpData) {
         owner = rmpData.owner;
         site = rmpData.site;
         file = rmpData.file;
@@ -59,11 +59,11 @@ public class RandomMusicPlayerData extends RealmObject {
         return id;
     }
 
-    public String getStringId() {
+    String getStringId() {
         return String.valueOf(id);
     }
 
-    public boolean isPlay() {
+    boolean isPlay() {
         if (now == 0) {
             return true;
         } else {
@@ -72,7 +72,7 @@ public class RandomMusicPlayerData extends RealmObject {
         }
     }
 
-    public void handleSkipToNext() {
+    void handleSkipToNext() {
         now += skip + 1;
         double d = (1.0 + Math.sqrt(1.0 + 8.0 * skip)) / 2.0 + 1.0;
         skip = (int) ((d - 1.0) * d / 2.0);
@@ -82,19 +82,19 @@ public class RandomMusicPlayerData extends RealmObject {
         score = count + repeat - (now + skip);
     }
 
-    public void handleSkipToPrevious() {
+    void handleSkipToPrevious() {
         repeat++;
         score = count + repeat - (now + skip);
     }
 
-    public void handleCompletion() {
+    void handleCompletion() {
         now++;
         count++;
         skip /= 2;
         score = count + repeat - (now + skip);
     }
 
-    public MediaMetadata toMediaMetadata() {
+    MediaMetadata toMediaMetadata() {
         return new Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, getStringId())
                 .putString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE, file)

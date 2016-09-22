@@ -44,7 +44,7 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 class MusicProvider {
-    public static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
+    static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
     private static final String LOG_TAG = LogHelper.makeLogTag(MusicProvider.class);
     private static final String BASE_URL = "http://flg.jp:10080/";
     private final Retrofit m_retrofit;
@@ -89,7 +89,7 @@ class MusicProvider {
                 .build();
     }
 
-    public void getRmpData() {
+    void getRmpData() {
         m_retrofit.create(RandomMusicPlayerRESTfulApi.class).getLogin()
                 .flatMap(new Func1<ResponseBody, Observable<ResponseBody>>() {
                     @Override
@@ -138,13 +138,10 @@ class MusicProvider {
                     }
                 });
         setRmpDataRealm();
+        setNextNowMusic();
     }
 
-    @Nullable
-    public MediaMetadata getNowMusic() {
-        if (rmpDataList.isEmpty()) {
-            return null;
-        }
+    private void setNextNowMusic() {
         realm.beginTransaction();
         do {
             if (!rmpDataIterator.hasNext()) {
@@ -153,28 +150,34 @@ class MusicProvider {
             nowMusic = rmpDataIterator.next();
         } while (!nowMusic.isPlay());
         realm.commitTransaction();
-
-        return nowMusic.toMediaMetadata();
     }
 
-    public void handleCompletion() {
+    @Nullable
+    MediaMetadata getNowMusic() {
+        return nowMusic != null ? nowMusic.toMediaMetadata() : null;
+    }
+
+    void handleCompletion() {
         realm.beginTransaction();
         nowMusic.handleCompletion();
         realm.commitTransaction();
         putRmpData();
+        setNextNowMusic();
     }
 
-    public void handleSkipToNext() {
+    void handleSkipToNext() {
         realm.beginTransaction();
         nowMusic.handleSkipToNext();
         realm.commitTransaction();
         putRmpData();
+        setNextNowMusic();
     }
 
-    public void handleSkipToPrevious() {
+    void handleSkipToPrevious() {
         realm.beginTransaction();
         nowMusic.handleSkipToPrevious();
         realm.commitTransaction();
+        putRmpData();
     }
 
     private void putRmpData() {

@@ -32,8 +32,10 @@
     <inspection_tool class="AndroidLintAppLinksAutoVerifyError" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintAppLinksAutoVerifyWarning" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintAssert" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AndroidLintAuthLeak" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintBackButton" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintBadHostnameVerifier" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AndroidLintBatteryLife" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintButtonCase" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintButtonOrder" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintButtonStyle" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -69,6 +71,7 @@
     <inspection_tool class="AndroidLintGrantAllUris" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintHandlerLeak" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintHardcodedText" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AndroidLintHardwareIds" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintIconColors" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintIconDensities" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintIconDipSize" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -142,6 +145,7 @@
     <inspection_tool class="AndroidLintSmallSp" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintSpUsage" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintStateListReachable" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AndroidLintStaticFieldLeak" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintStopShip" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintStringFormatCount" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AndroidLintSuspiciousImport" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -235,6 +239,8 @@
     <inspection_tool class="AssignmentToStaticFieldFromInstanceMethod" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AssignmentToSuperclassField" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AssignmentUsedAsCondition" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AtomicFieldUpdaterIssues" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="AtomicFieldUpdaterNotStaticFinal" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="AutoBoxing" enabled="false" level="ERROR" enabled_by_default="false">
       <option name="ignoreAddedToCollection" value="false" />
     </inspection_tool>
@@ -477,6 +483,7 @@
       <option name="ignoreLocalVariables" value="false" />
       <option name="ignorePrivateMethodsAndFields" value="false" />
     </inspection_tool>
+    <inspection_tool class="DefaultAnnotationParam" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="DefaultFileTemplate" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="CHECK_FILE_HEADER" value="true" />
       <option name="CHECK_TRY_CATCH_SECTION" value="true" />
@@ -530,6 +537,7 @@
       </option>
       <option name="ignoreClassWithParameterization" value="false" />
       <option name="ignoreThrowables" value="true" />
+      <option name="commentsAreContent" value="true" />
     </inspection_tool>
     <inspection_tool class="EmptyDirectory" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="EmptyFinallyBlock" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -815,6 +823,7 @@
     <inspection_tool class="GroovyWhileLoopSpinsOnField" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreNonEmtpyLoops" value="false" />
     </inspection_tool>
+    <inspection_tool class="Guava" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="GuavaFluentIterable" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="HardCodedStringLiteral" enabled="false" level="ERROR" enabled_by_default="false">
       <option name="ignoreForAssertStatements" value="true" />
@@ -907,6 +916,7 @@
     <inspection_tool class="IncrementDecrementUsedAsExpression" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="IndexOfReplaceableByContains" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InfiniteLoopStatement" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="InfiniteRecursion" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InnerClassMayBeStatic" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InnerClassOnInterface" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="m_ignoreInnerInterfaces" value="false" />
@@ -949,6 +959,7 @@
       <option name="ignoreNonOverflowingCompileTimeConstants" value="true" />
     </inspection_tool>
     <inspection_tool class="InterfaceMayBeAnnotatedFunctional" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="InterfaceMethodClashesWithObject" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InterfaceNamingConvention" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="m_regex" value="[A-Z][A-Za-z\d]*" />
       <option name="m_minLength" value="8" />
@@ -985,6 +996,7 @@
       <option name="m_maxLength" value="64" />
     </inspection_tool>
     <inspection_tool class="JUnitTestNG" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="Java8CollectionsApi" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="JavaDoc" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="TOP_LEVEL_CLASS_OPTIONS">
         <value>
@@ -1026,6 +1038,7 @@
     <inspection_tool class="LabeledStatement" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="LambdaParameterHidingMemberVariable" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="LambdaParameterNamingConvention" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="LambdaUnfriendlyMethodOverload" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="LanguageMismatch" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="CHECK_NON_ANNOTATED_REFERENCES" value="true" />
     </inspection_tool>
@@ -1115,6 +1128,7 @@
     <inspection_tool class="MethodReturnAlwaysConstant" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="MethodReturnOfConcreteClass" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="MethodWithMultipleLoops" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="MigrateAssertToMatcherAssert" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="MismatchedArrayReadWrite" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="MismatchedCollectionQueryUpdate" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="queryNames">
@@ -1279,6 +1293,9 @@
     <inspection_tool class="OctalAndDecimalIntegersMixed" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="OctalLiteral" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="OnDemandImport" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="OptionalContainsCollection" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="OptionalGetWithoutIsPresent" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="OptionalUsedAsFieldOrParameterType" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="OverloadedMethodsWithSameNumberOfParameters" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreInconvertibleTypes" value="true" />
     </inspection_tool>
@@ -1402,6 +1419,7 @@
     <inspection_tool class="ReadResolveAndWriteReplaceProtected" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RecordStoreResource" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantArrayCreation" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="RedundantCast" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantFieldInitialization" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantImplements" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreSerializable" value="false" />
@@ -1488,7 +1506,6 @@
     <inspection_tool class="SimplifiableEqualsExpression" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="SimplifiableIfStatement" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="SimplifiableJUnitAssertion" enabled="true" level="ERROR" enabled_by_default="true" />
-    <inspection_tool class="Since15" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="SingleCharacterStartsWith" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="SingleClassImport" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="Singleton" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -1511,6 +1528,7 @@
     <inspection_tool class="StaticGuardedByInstance" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="StaticImport" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="StaticInheritance" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="StaticInitializerReferencesSubClass" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="StaticMethodNamingConvention" enabled="false" level="ERROR" enabled_by_default="false">
       <option name="m_regex" value="[a-z][A-Za-z\d]*" />
       <option name="m_minLength" value="4" />
@@ -1679,7 +1697,9 @@
     <inspection_tool class="TrailingSpacesInProperty" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TransientFieldInNonSerializableClass" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TransientFieldNotInitialized" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="TrivialFunctionalExpressionUsage" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TrivialIf" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="TrivialMethodReference" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TrivialStringConcatenation" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TryFinallyCanBeTryWithResources" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="TryWithIdenticalCatches" enabled="true" level="ERROR" enabled_by_default="true" />
@@ -1734,6 +1754,7 @@
       <option name="m_ignoreJavadoc" value="false" />
     </inspection_tool>
     <inspection_tool class="UnnecessaryInheritDoc" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="UnnecessaryInitCause" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="UnnecessaryInterfaceModifier" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="UnnecessaryJavaDocLink" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreInlineLinkToSuper" value="false" />
@@ -1851,6 +1872,7 @@
     <inspection_tool class="WrongPropertyKeyValueDelimiter" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="XmlUnboundNsPrefix" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="XmlUnusedNamespaceDeclaration" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="XmlWrongFileType" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="ZeroLengthArrayInitialization" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="dependsOnMethodTestNG" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="groupsTestNG" enabled="true" level="ERROR" enabled_by_default="true">

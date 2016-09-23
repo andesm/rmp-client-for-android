@@ -134,10 +134,10 @@ class MusicProvider {
                         }
                         realm.commitTransaction();
                         LogHelper.d(LOG_TAG, "Getting from REST completed");
-                        setRmpDataRealm();
+                        setRmpDataFromRealm();
                     }
                 });
-        setRmpDataRealm();
+        setRmpDataFromRealm();
         setNextNowMusic();
     }
 
@@ -211,7 +211,7 @@ class MusicProvider {
         }
     }
 
-    private void setRmpDataRealm() {
+    private void setRmpDataFromRealm() {
         RealmResults<RandomMusicPlayerData> rmpDataRealm =
                 realm.where(RandomMusicPlayerData.class).findAll();
         rmpDataList.clear();

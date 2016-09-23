@@ -916,7 +916,6 @@
     <inspection_tool class="IncrementDecrementUsedAsExpression" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="IndexOfReplaceableByContains" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InfiniteLoopStatement" enabled="true" level="ERROR" enabled_by_default="true" />
-    <inspection_tool class="InfiniteRecursion" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InnerClassMayBeStatic" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="InnerClassOnInterface" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="m_ignoreInnerInterfaces" value="false" />
@@ -1419,7 +1418,6 @@
     <inspection_tool class="ReadResolveAndWriteReplaceProtected" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RecordStoreResource" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantArrayCreation" enabled="true" level="ERROR" enabled_by_default="true" />
-    <inspection_tool class="RedundantCast" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantFieldInitialization" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="RedundantImplements" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreSerializable" value="false" />

@@ -153,7 +153,6 @@ class Playback implements OnAudioFocusChangeListener,
             }
 
             mState = PlaybackState.STATE_STOPPED;
-            relaxResources(false); // release everything except MediaPlayer
 
             String source = Environment.getExternalStorageDirectory()
                     + "/Music/rmp/"
@@ -163,6 +162,7 @@ class Playback implements OnAudioFocusChangeListener,
             Uri sourceUri = Uri.fromFile(new File(source));
 
             mServiceCallback.onMetadataChanged(track);
+            mCurrentPosition = 0;
 
             try {
                 createMediaPlayerIfNeeded();
@@ -192,8 +192,6 @@ class Playback implements OnAudioFocusChangeListener,
                     mMediaPlayer.pause();
                     mCurrentPosition = mMediaPlayer.getCurrentPosition();
                 }
-                // while paused, retain the MediaPlayer but give up audio focus
-                relaxResources(false);
                 giveUpAudioFocus();
             }
             mState = PlaybackState.STATE_PAUSED;
@@ -212,7 +210,7 @@ class Playback implements OnAudioFocusChangeListener,
         giveUpAudioFocus();
         unregisterAudioNoisyReceiver();
         // Relax all resources
-        relaxResources(true);
+        relaxResources();
 
         mServiceCallback.onPlaybackStop();
         updatePlaybackState(withError);
@@ -298,13 +296,8 @@ class Playback implements OnAudioFocusChangeListener,
                 if (mMediaPlayer != null && !mMediaPlayer.isPlaying()) {
                     LogHelper.d(TAG, "configMediaPlayerState startMediaPlayer. seeking to ",
                             mCurrentPosition);
-                    if (mCurrentPosition == mMediaPlayer.getCurrentPosition()) {
                         mMediaPlayer.start();
                         mState = PlaybackState.STATE_PLAYING;
-                    } else {
-                        mMediaPlayer.seekTo(mCurrentPosition);
-                        mState = PlaybackState.STATE_BUFFERING;
-                    }
                 }
                 mPlayOnFocusGain = false;
             }
@@ -333,11 +326,11 @@ class Playback implements OnAudioFocusChangeListener,
         }
     }
 
-    private void relaxResources(boolean releaseMediaPlayer) {
-        LogHelper.d(TAG, "relaxResources. releaseMediaPlayer=", releaseMediaPlayer);
+    private void relaxResources() {
+        LogHelper.d(TAG, "relaxResources.");
 
         // stop and release the Media Player, if it's available
-        if (releaseMediaPlayer && mMediaPlayer != null) {
+        if (mMediaPlayer != null) {
             mMediaPlayer.reset();
             mMediaPlayer.release();
             mMediaPlayer = null;
@@ -429,7 +422,6 @@ class Playback implements OnAudioFocusChangeListener,
         @Override
         public void onPlayFromSearch(String query, Bundle extras) {
             LogHelper.d(TAG, "onPlayFromUri");
-            mCurrentPosition = 0;
             handleStopRequest(null);
             mMusicProvider.getRmpData();
             handlePlayRequest();
@@ -450,7 +442,6 @@ class Playback implements OnAudioFocusChangeListener,
         @Override
         public void onStop() {
             LogHelper.d(TAG, "onStop. current state=" + mState);
-            mCurrentPosition = 0;
             handleStopRequest(null);
         }
 
@@ -458,7 +449,6 @@ class Playback implements OnAudioFocusChangeListener,
         public void onSkipToNext() {
             LogHelper.d(TAG, "onSkipToNext");
             mMusicProvider.handleSkipToNext();
-            mCurrentPosition = 0;
             handlePlayRequest();
         }
 
@@ -466,7 +456,6 @@ class Playback implements OnAudioFocusChangeListener,
         public void onSkipToPrevious() {
             LogHelper.d(TAG, "onSkipToPrevious");
             mMusicProvider.handleSkipToPrevious();
-            mCurrentPosition = 0;
             handlePlayRequest();
         }
     }

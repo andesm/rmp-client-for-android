@@ -155,7 +155,7 @@ class Playback implements OnAudioFocusChangeListener,
             mState = PlaybackState.STATE_STOPPED;
 
             String source = Environment.getExternalStorageDirectory()
-                    + "/Music/rmp/"
+                    + "/rmp/"
                     + track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
             LogHelper.d(TAG, "Music source: " + source);
 

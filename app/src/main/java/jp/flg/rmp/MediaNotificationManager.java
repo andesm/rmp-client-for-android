@@ -146,7 +146,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
             mMetadata = mController.getMetadata();
             mPlaybackState = mController.getPlaybackState();
 
-            // The notification must be updated after setting started to true
+            // The notification must be updated after setting started to true.
             Notification notification = createNotification();
             if (notification != null) {
                 mController.registerCallback(mCb);

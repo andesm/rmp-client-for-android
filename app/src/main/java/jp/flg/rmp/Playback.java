@@ -334,9 +334,13 @@ class Playback implements OnAudioFocusChangeListener,
 
     interface PlaybackServiceCallback {
         void onPlaybackStart();
+
         void onNotificationRequired();
+
         void onPlaybackStop();
+
         void onPlaybackStateUpdated(PlaybackState newState);
+
         void onMetadataChanged(MediaMetadata metadata);
     }
 

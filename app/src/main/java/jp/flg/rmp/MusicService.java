@@ -42,8 +42,7 @@ public class MusicService extends MediaBrowserService implements
         super.onCreate();
         LogHelper.d(TAG, "onCreate");
 
-        MusicProvider mMusicProvider = new MusicProvider(this);
-        mPlayback = new Playback(this, mMusicProvider, this);
+        mPlayback = new Playback(this, new MusicProvider(this), this);
 
         // Start a new MediaSession
         mSession = new MediaSession(this, "MusicService");

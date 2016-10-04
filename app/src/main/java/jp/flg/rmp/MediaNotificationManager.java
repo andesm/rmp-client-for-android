@@ -124,6 +124,23 @@ public class MediaNotificationManager extends BroadcastReceiver {
         mNotificationManager.cancelAll();
     }
 
+    private int getThemeColor(Context context, int attribute, int defaultColor) {
+        int themeColor = 0;
+        String packageName = context.getPackageName();
+        try {
+            Context packageContext = context.createPackageContext(packageName, 0);
+            ApplicationInfo applicationInfo =
+                    context.getPackageManager().getApplicationInfo(packageName, 0);
+            packageContext.setTheme(applicationInfo.theme);
+            Theme theme = packageContext.getTheme();
+            TypedArray ta = theme.obtainStyledAttributes(new int[]{attribute});
+            themeColor = ta.getColor(0, defaultColor);
+            ta.recycle();
+        } catch (NameNotFoundException ignored) {
+        }
+        return themeColor;
+    }
+
     public void startNotification() {
         if (!mStarted && mController != null) {
             mMetadata = mController.getMetadata();
@@ -237,17 +254,35 @@ public class MediaNotificationManager extends BroadcastReceiver {
             notificationBuilder.addAction(action.build());
         }
 
-        addPlayPauseAction(notificationBuilder);
+        String label;
+        int icon;
+        PendingIntent intent;
+        if (mPlaybackState.getState() == PlaybackState.STATE_PLAYING) {
+            label = mService.getString(string.label_pause);
+            icon = drawable.ic_pause_white_24dp;
+            intent = mPauseIntent;
+        } else {
+            label = mService.getString(string.label_play);
+            icon = drawable.ic_play_arrow_white_24dp;
+            intent = mPlayIntent;
+        }
+        Builder action = new Builder(
+                Icon.createWithResource(
+                        mService.getApplicationContext(),
+                        icon),
+                label,
+                intent);
+        notificationBuilder.addAction(action.build());
 
         // If skip to next action is enabled
         if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_NEXT) != 0) {
-            Builder action = new Builder(
+            Builder builder = new Builder(
                     Icon.createWithResource(
                             mService.getApplicationContext(),
                             drawable.ic_skip_next_white_24dp),
                     mService.getString(string.label_next),
                     mNextIntent);
-            notificationBuilder.addAction(action.build());
+            notificationBuilder.addAction(builder.build());
         }
 
         MediaDescription description = mMetadata.getDescription();
@@ -283,45 +318,5 @@ public class MediaNotificationManager extends BroadcastReceiver {
         }
 
         return notificationBuilder.build();
-    }
-
-    private void addPlayPauseAction(Notification.Builder builder) {
-        LogHelper.d(TAG, "updatePlayPauseAction");
-        String label;
-        int icon;
-        PendingIntent intent;
-        if (mPlaybackState.getState() == PlaybackState.STATE_PLAYING) {
-            label = mService.getString(string.label_pause);
-            icon = drawable.ic_pause_white_24dp;
-            intent = mPauseIntent;
-        } else {
-            label = mService.getString(string.label_play);
-            icon = drawable.ic_play_arrow_white_24dp;
-            intent = mPlayIntent;
-        }
-        Builder action = new Builder(
-                Icon.createWithResource(
-                        mService.getApplicationContext(),
-                        icon),
-                label,
-                intent);
-        builder.addAction(action.build());
-    }
-
-    private int getThemeColor(Context context, int attribute, int defaultColor) {
-        int themeColor = 0;
-        String packageName = context.getPackageName();
-        try {
-            Context packageContext = context.createPackageContext(packageName, 0);
-            ApplicationInfo applicationInfo =
-                    context.getPackageManager().getApplicationInfo(packageName, 0);
-            packageContext.setTheme(applicationInfo.theme);
-            Theme theme = packageContext.getTheme();
-            TypedArray ta = theme.obtainStyledAttributes(new int[]{attribute});
-            themeColor = ta.getColor(0, defaultColor);
-            ta.recycle();
-        } catch (NameNotFoundException ignored) {
-        }
-        return themeColor;
     }
 }

@@ -45,7 +45,7 @@ class Playback implements OnAudioFocusChangeListener,
     // we have full audio focus
     private static final int AUDIO_FOCUSED = 2;
 
-    private static final int DOUBLE_CLICK = 400;
+    private static final long DOUBLE_CLICK = 400L;
 
     private final Context mContext;
     private final MusicProvider mMusicProvider;
@@ -69,8 +69,8 @@ class Playback implements OnAudioFocusChangeListener,
                 if (isPlaying()) {
                     Intent newIntent = new Intent(context, MusicService.class);
                     newIntent.setAction(MusicService.ACTION_CMD);
-                    newIntent.putExtra(MusicService.CMD_NAME, MusicService.CMD_PAUSE);
-                    mContext.startService(intent);
+                    newIntent.putExtra(MusicService.CMD_NAME, MusicService.CMD_STOP);
+                    mContext.startService(newIntent);
                 }
             }
         }
@@ -173,7 +173,7 @@ class Playback implements OnAudioFocusChangeListener,
         return true; // true indicates we handled the error
     }
 
-    void handlePauseRequest() {
+    private void handlePauseRequest() {
         LogHelper.d(TAG, "handlePauseRequest: mState=" + mState);
         if (isPlaying()) {
             if (mState == PlaybackState.STATE_PLAYING) {
@@ -213,7 +213,7 @@ class Playback implements OnAudioFocusChangeListener,
 
     void updatePlaybackState(CharSequence error) {
         LogHelper.d(TAG, "updatePlaybackState, playback state=" + mState);
-        long position = mMediaPlayer != null ? mMediaPlayer.getCurrentPosition() : mCurrentPosition;
+        int position = mMediaPlayer != null ? mMediaPlayer.getCurrentPosition() : mCurrentPosition;
         long actions =
                 PlaybackState.ACTION_PLAY |
                         PlaybackState.ACTION_PLAY_FROM_SEARCH |
@@ -225,18 +225,16 @@ class Playback implements OnAudioFocusChangeListener,
 
         Builder stateBuilder = new Builder().setActions(actions);
 
-        int state = mState;
-
         if (error != null) {
             stateBuilder.setErrorMessage(error);
-            state = PlaybackState.STATE_ERROR;
+            mState = PlaybackState.STATE_ERROR;
         }
-        stateBuilder.setState(state, position, 1.0f, SystemClock.elapsedRealtime());
+        stateBuilder.setState(mState, (long) position, 1.0f, SystemClock.elapsedRealtime());
 
         mServiceCallback.onPlaybackStateUpdated(stateBuilder.build());
 
-        if (state == PlaybackState.STATE_PLAYING ||
-                state == PlaybackState.STATE_PAUSED) {
+        if (mState == PlaybackState.STATE_PLAYING ||
+                mState == PlaybackState.STATE_PAUSED) {
             mServiceCallback.onNotificationRequired();
         }
     }
@@ -257,10 +255,9 @@ class Playback implements OnAudioFocusChangeListener,
         } else {
             MediaMetadata track = mMusicProvider.getNowMusic();
             if (track == null) {
+                handleStopRequest("No nowMusic");
                 return;
             }
-
-            mState = PlaybackState.STATE_STOPPED;
 
             String source = Environment.getExternalStorageDirectory()
                     + "/rmp/"
@@ -269,6 +266,7 @@ class Playback implements OnAudioFocusChangeListener,
 
             Uri sourceUri = Uri.fromFile(new File(source));
 
+            mState = PlaybackState.STATE_STOPPED;
             mServiceCallback.onMetadataChanged(track);
             mCurrentPosition = 0;
 
@@ -364,7 +362,7 @@ class Playback implements OnAudioFocusChangeListener,
             }
 
             final int oldNumClicks = numClicks;
-            CountDownTimer checkIfDone = new CountDownTimer(DOUBLE_CLICK, 10) {
+            CountDownTimer checkIfDone = new CountDownTimer(DOUBLE_CLICK, 10L) {
                 @Override
                 public void onTick(long millisUntilFinished) {
                     if (oldNumClicks != numClicks) {
@@ -376,26 +374,24 @@ class Playback implements OnAudioFocusChangeListener,
                 public void onFinish() {
                     if (oldNumClicks == numClicks) {
                         LogHelper.d(TAG, "numClicks = " + numClicks);
-                        switch (numClicks) {
-                            case 1:
-                                LogHelper.d(TAG, "skip");
-                                mState = PlaybackState.STATE_STOPPED;
-                                onSkipToNext();
-                                break;
-                            case 2:
-                                LogHelper.d(TAG, "previous");
-                                mState = PlaybackState.STATE_STOPPED;
-                                onSkipToPrevious();
-                                break;
-                            default:
+                        if (numClicks == 1) {
+                            LogHelper.d(TAG, "skip");
+                            mState = PlaybackState.STATE_STOPPED;
+                            onSkipToNext();
+
+                        } else if (numClicks >= 2) {
+                            LogHelper.d(TAG, "previous");
+                            mState = PlaybackState.STATE_STOPPED;
+                            onSkipToPrevious();
+
                         }
                         numClicks = 0;
-                        lastClickTime = 0;
+                        lastClickTime = 0L;
                     }
                 }
             }.start();
 
-            return super.onMediaButtonEvent(mediaButtonIntent);
+            return numClicks != 0 || super.onMediaButtonEvent(mediaButtonIntent);
         }
 
 
@@ -438,6 +434,6 @@ class Playback implements OnAudioFocusChangeListener,
             mMusicProvider.handleSkipToPrevious();
             handlePlayRequest();
         }
-    }
 
+    }
 }

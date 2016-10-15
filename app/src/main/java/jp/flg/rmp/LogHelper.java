@@ -10,8 +10,7 @@ class LogHelper {
 
     private static String makeLogTag(String str) {
         if (str.length() > MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH) {
-            return LOG_PREFIX +
-                    str.substring(0, MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH - 1);
+            return LOG_PREFIX + str.substring(0, MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH - 1);
         }
 
         return LOG_PREFIX + str;
@@ -20,41 +19,26 @@ class LogHelper {
     /**
      * Don't use this when obfuscating class names!
      */
-    public static String makeLogTag(Class cls) {
+    static String makeLogTag(Class cls) {
         return makeLogTag(cls.getSimpleName());
     }
 
-    public static void v(String tag, Object... messages) {
-        // Only log VERBOSE if build type is DEBUG
-        if (BuildConfig.DEBUG) {
-            log(tag, Log.VERBOSE, null, messages);
-        }
-    }
-
-    public static void d(String tag, Object... messages) {
+    static void d(String tag, Object... messages) {
         // Only log DEBUG if build type is DEBUG
         if (BuildConfig.DEBUG) {
             log(tag, Log.DEBUG, null, messages);
         }
     }
 
-    public static void i(String tag, Object... messages) {
-        log(tag, Log.INFO, null, messages);
-    }
-
-    public static void w(String tag, Object... messages) {
+    static void w(String tag, Object... messages) {
         log(tag, Log.WARN, null, messages);
     }
 
-    public static void w(String tag, Throwable t, Object... messages) {
-        log(tag, Log.WARN, t, messages);
-    }
-
-    public static void e(String tag, Object... messages) {
+    static void e(String tag, Object... messages) {
         log(tag, Log.ERROR, null, messages);
     }
 
-    public static void e(String tag, Throwable t, Object... messages) {
+    static void e(String tag, Throwable t, Object... messages) {
         log(tag, Log.ERROR, t, messages);
     }
 

@@ -49,7 +49,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     private final PendingIntent mPlayIntent;
     private final PendingIntent mPreviousIntent;
     private final PendingIntent mNextIntent;
-    private final PendingIntent mStopCastIntent;
+    private final PendingIntent mStopIntent;
     private final int mNotificationColor;
     @Nullable
     private Token mSessionToken;
@@ -115,7 +115,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
                 new Intent(ACTION_PREV).setPackage(pkg), PendingIntent.FLAG_CANCEL_CURRENT);
         mNextIntent = PendingIntent.getBroadcast(mService, REQUEST_CODE,
                 new Intent(ACTION_NEXT).setPackage(pkg), PendingIntent.FLAG_CANCEL_CURRENT);
-        mStopCastIntent = PendingIntent.getBroadcast(mService, REQUEST_CODE,
+        mStopIntent = PendingIntent.getBroadcast(mService, REQUEST_CODE,
                 new Intent(ACTION_STOP).setPackage(pkg),
                 PendingIntent.FLAG_CANCEL_CURRENT);
 
@@ -244,7 +244,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
         Notification.Builder notificationBuilder = new Notification.Builder(mService);
 
         // If skip to previous action is enabled
-        if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0) {
+        if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0L) {
             Builder action = new Builder(
                     Icon.createWithResource(
                             mService.getApplicationContext(),
@@ -275,7 +275,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
         notificationBuilder.addAction(action.build());
 
         // If skip to next action is enabled
-        if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_NEXT) != 0) {
+        if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_NEXT) != 0L) {
             Builder builder = new Builder(
                     Icon.createWithResource(
                             mService.getApplicationContext(),
@@ -300,22 +300,6 @@ public class MediaNotificationManager extends BroadcastReceiver {
                 .setContentIntent(createContentIntent(description))
                 .setContentTitle(description.getTitle())
                 .setContentText(description.getSubtitle());
-
-        if (mController != null && mController.getExtras() != null) {
-            String castName = mController.getExtras().getString(MusicService.EXTRA_CONNECTED_CAST);
-            if (castName != null) {
-                String castInfo = mService.getResources()
-                        .getString(string.casting_to_device, castName);
-                notificationBuilder.setSubText(castInfo);
-                Builder builder = new Builder(
-                        Icon.createWithResource(
-                                mService.getApplicationContext(),
-                                drawable.ic_close_black_24dp),
-                        mService.getString(string.label_stop),
-                        mStopCastIntent);
-                notificationBuilder.addAction(builder.build());
-            }
-        }
 
         return notificationBuilder.build();
     }

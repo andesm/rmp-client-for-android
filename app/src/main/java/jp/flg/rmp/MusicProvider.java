@@ -1,13 +1,15 @@
 package jp.flg.rmp;
 
-
 import android.content.Context;
 import android.media.MediaMetadata;
+import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.util.SparseBooleanArray;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.File;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpCookie;
@@ -18,8 +20,8 @@ import java.util.List;
 import java.util.Objects;
 
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
+import io.realm.exceptions.RealmException;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
@@ -47,23 +49,23 @@ class MusicProvider {
     static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
     private static final String LOG_TAG = LogHelper.makeLogTag(MusicProvider.class);
     private static final String BASE_URL = "http://flg.jp:10080/";
-    private final Retrofit m_retrofit;
-    private final Realm realm;
     private final List<RandomMusicPlayerData> rmpDataList = new ArrayList<>();
     private final CookieManager cookieManager = new CookieManager();
+    private Retrofit retrofit;
+    private Realm realm;
     private String csrfToken;
     private Iterator<RandomMusicPlayerData> rmpDataIterator;
+    @Nullable
     private RandomMusicPlayerData nowMusic;
+    private boolean retrieving;
 
     MusicProvider(Context context) {
-        RealmConfiguration.Builder builder = new RealmConfiguration.Builder(context);
-        RealmConfiguration realmConfig = builder.build();
-        Realm.setDefaultConfiguration(realmConfig);
-        realm = Realm.getDefaultInstance();
-        //realm.beginTransaction();
-
-        //realm.deleteAll();
-        //realm.commitTransaction();
+        Realm.init(context);
+        try {
+            realm = Realm.getDefaultInstance();
+        } catch (RealmException ignored) {
+            return;
+        }
 
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         //loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -81,7 +83,7 @@ class MusicProvider {
                 .setLenient()
                 .create();
 
-        m_retrofit = new Builder()
+        retrofit = new Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
@@ -90,98 +92,161 @@ class MusicProvider {
     }
 
     void getRmpData() {
-        m_retrofit.create(RandomMusicPlayerRESTfulApi.class).getLogin()
-                .flatMap(new Func1<ResponseBody, Observable<ResponseBody>>() {
-                    @Override
-                    public Observable<ResponseBody> call(ResponseBody body) {
-                        setCsrfToken();
-                        return m_retrofit.create(RandomMusicPlayerRESTfulApi.class)
-                                .postLogin("/app/rmp/", csrfToken,
-                                        "andesm", "AkdiJ352o", "Log in");
-                    }
-                })
-                .flatMap(new Func1<ResponseBody, Observable<List<RandomMusicPlayerData>>>() {
-                    @Override
-                    public Observable<List<RandomMusicPlayerData>> call(ResponseBody body) {
-                        setCsrfToken();
-                        return m_retrofit.create(RandomMusicPlayerRESTfulApi.class).get(csrfToken);
-                    }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread()).
-                subscribe(new Observer<List<RandomMusicPlayerData>>() {
-                    @Override
-                    public void onCompleted() {
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        LogHelper.d(LOG_TAG, e);
-                    }
-
-                    @Override
-                    public void onNext(List<RandomMusicPlayerData> rmpDataListResult) {
-                        realm.beginTransaction();
-                        for (RandomMusicPlayerData rmpData : rmpDataListResult) {
-                            RandomMusicPlayerData rmpRealmData = realm
-                                    .where(RandomMusicPlayerData.class)
-                                    .equalTo("id", rmpData.getId()).findFirst();
-                            if (rmpRealmData == null) {
-                                RandomMusicPlayerData createdRmpData = realm.copyToRealm(rmpData);
-                            } else {
-                                rmpRealmData.updateRmpData(rmpData);
-                            }
+        if (!retrieving) {
+            retrieving = true;
+            retrofit.create(RandomMusicPlayerRESTfulApi.class).getLogin()
+                    .flatMap(new Func1<ResponseBody, Observable<ResponseBody>>() {
+                        @Override
+                        public Observable<ResponseBody> call(ResponseBody body) {
+                            setCsrfToken();
+                            return retrofit.create(RandomMusicPlayerRESTfulApi.class)
+                                    .postLogin("/app/rmp/", csrfToken,
+                                            "andesm", "AkdiJ352o", "Log in");
                         }
-                        realm.commitTransaction();
-                        LogHelper.d(LOG_TAG, "Getting from REST completed");
-                        setRmpDataFromRealm();
-                    }
-                });
+                    })
+                    .flatMap(new Func1<ResponseBody, Observable<List<RandomMusicPlayerData>>>() {
+                        @Override
+                        public Observable<List<RandomMusicPlayerData>> call(ResponseBody body) {
+                            setCsrfToken();
+                            return retrofit.create(RandomMusicPlayerRESTfulApi.class).get(csrfToken);
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread()).
+                    subscribe(new Observer<List<RandomMusicPlayerData>>() {
+                        @Override
+                        public void onCompleted() {
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            LogHelper.d(LOG_TAG, e);
+                        }
+
+                        @Override
+                        public void onNext(final List<RandomMusicPlayerData> rmpDataListResult) {
+                            //realm.deleteAll();
+                            LogHelper.d(LOG_TAG, "Getting from REST completed");
+
+                            realm.executeTransactionAsync(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm bgRealm) {
+                                    LogHelper.d(LOG_TAG, "Storing to Database start");
+                                    SparseBooleanArray id = new SparseBooleanArray();
+                                    for (RandomMusicPlayerData rmpData : rmpDataListResult) {
+                                        RandomMusicPlayerData rmpRealmData = bgRealm
+                                                .where(RandomMusicPlayerData.class)
+                                                .equalTo("id", rmpData.getId()).findFirst();
+                                        if (rmpRealmData == null) {
+                                            RandomMusicPlayerData createdRmpData =
+                                                    bgRealm.copyToRealm(rmpData);
+                                        } else {
+                                            rmpRealmData.updateRmpData(rmpData);
+                                        }
+                                        id.put(rmpData.getId(), true);
+                                    }
+                                    LogHelper.d(LOG_TAG, "Storing to Database completed");
+
+                                    RealmResults<RandomMusicPlayerData> rmpDataRealm =
+                                            bgRealm.where(RandomMusicPlayerData.class).findAll();
+                                    for (RandomMusicPlayerData rmpData : rmpDataRealm) {
+                                        if (!id.get(rmpData.getId())) {
+                                            LogHelper.d(LOG_TAG, "Deleted Rmp Data: " +
+                                                    rmpData.getId());
+                                            rmpData.deleteFromRealm();
+                                        }
+                                    }
+                                }
+                            }, new Realm.Transaction.OnSuccess() {
+                                @Override
+                                public void onSuccess() {
+                                    LogHelper.d(LOG_TAG, "Deleting to Database completed");
+                                    setRmpDataFromRealm();
+                                    setNextNowMusic();
+                                    retrieving = false;
+                                }
+                            }, new Realm.Transaction.OnError() {
+                                @Override
+                                public void onError(Throwable error) {
+                                    LogHelper.d(LOG_TAG, "executeTransactionAsync error");
+                                    retrieving = false;
+                                }
+                            });
+
+                        }
+                    });
+        }
         setRmpDataFromRealm();
         setNextNowMusic();
     }
 
-    private void setNextNowMusic() {
-        realm.beginTransaction();
-        do {
-            if (!rmpDataIterator.hasNext()) {
-                rmpDataIterator = rmpDataList.iterator();
-            }
-            nowMusic = rmpDataIterator.next();
-        } while (!nowMusic.isPlay());
-        realm.commitTransaction();
-    }
-
     @Nullable
     MediaMetadata getNowMusic() {
-        return nowMusic != null ? nowMusic.toMediaMetadata() : null;
+        return nowMusic == null ? null : nowMusic.toMediaMetadata();
     }
 
     void handleCompletion() {
-        realm.beginTransaction();
-        nowMusic.handleCompletion();
-        realm.commitTransaction();
-        putRmpData();
+        if (nowMusic != null) {
+            realm.beginTransaction();
+            nowMusic.handleCompletion();
+            realm.commitTransaction();
+            putRmpData();
+        }
         setNextNowMusic();
     }
 
     void handleSkipToNext() {
-        realm.beginTransaction();
-        nowMusic.handleSkipToNext();
-        realm.commitTransaction();
-        putRmpData();
+        if (nowMusic != null) {
+            realm.beginTransaction();
+            nowMusic.handleSkipToNext();
+            realm.commitTransaction();
+            putRmpData();
+        }
         setNextNowMusic();
     }
 
     void handleSkipToPrevious() {
-        realm.beginTransaction();
-        nowMusic.handleSkipToPrevious();
-        realm.commitTransaction();
-        putRmpData();
+        if (nowMusic != null) {
+            realm.beginTransaction();
+            nowMusic.handleSkipToPrevious();
+            realm.commitTransaction();
+            putRmpData();
+        }
+    }
+
+    private void setNextNowMusic() {
+        if (rmpDataList.isEmpty()) {
+            nowMusic = null;
+            return;
+        }
+
+        int size = rmpDataList.size();
+        for (int count = 0; count < size; count++) {
+            if (!rmpDataIterator.hasNext()) {
+                rmpDataIterator = rmpDataList.iterator();
+            }
+            nowMusic = rmpDataIterator.next();
+            if (nowMusic == null) {
+                return;
+            }
+            String source = Environment.getExternalStorageDirectory()
+                    + "/rmp/"
+                    + nowMusic.getFile();
+            File file = new File(source);
+            if (file.exists()) {
+                realm.beginTransaction();
+                nowMusic.isPlay();
+                realm.commitTransaction();
+                return;
+            }
+        }
     }
 
     private void putRmpData() {
-        m_retrofit.create(RandomMusicPlayerRESTfulApi.class)
+        if (nowMusic == null) {
+            return;
+        }
+        retrofit.create(RandomMusicPlayerRESTfulApi.class)
                 .put(csrfToken, nowMusic.getStringId(), realm.copyFromRealm(nowMusic))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread()).

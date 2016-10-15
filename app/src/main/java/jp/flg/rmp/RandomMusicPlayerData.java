@@ -59,6 +59,10 @@ public class RandomMusicPlayerData extends RealmObject {
         return id;
     }
 
+    String getFile() {
+        return file;
+    }
+
     String getStringId() {
         return String.valueOf(id);
     }
@@ -74,7 +78,7 @@ public class RandomMusicPlayerData extends RealmObject {
 
     void handleSkipToNext() {
         now += skip + 1;
-        double d = (1.0 + Math.sqrt(1.0 + 8.0 * skip)) / 2.0 + 1.0;
+        double d = (1.0 + Math.sqrt(1.0 + 8.0 * (double) skip)) / 2.0 + 1.0;
         skip = (int) ((d - 1.0) * d / 2.0);
         if (0 < repeat) {
             repeat--;

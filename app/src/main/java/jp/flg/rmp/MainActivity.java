@@ -3,22 +3,21 @@ package jp.flg.rmp;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.media.browse.MediaBrowser;
-import android.media.browse.MediaBrowser.ConnectionCallback;
 import android.media.session.MediaController;
 import android.media.session.MediaSession.Token;
 import android.os.Bundle;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.Realm;
 import jp.flg.rmp.R.id;
-import jp.flg.rmp.R.layout;
 
 public class MainActivity extends Activity {
     private static final String TAG = LogHelper.makeLogTag(MainActivity.class);
 
     private MediaBrowser mMediaBrowser;
-    private final ConnectionCallback mConnectionCallback =
-            new ConnectionCallback() {
+    private final MediaBrowser.ConnectionCallback mConnectionCallback =
+            new MediaBrowser.ConnectionCallback() {
                 @Override
                 public void onConnected() {
                     LogHelper.d(TAG, "onConnected");
@@ -31,11 +30,13 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         LogHelper.d(TAG, "Activity onCreate");
 
+        Realm.init(this);
+
         mMediaBrowser = new MediaBrowser(this,
                 new ComponentName(this, MusicService.class),
                 mConnectionCallback, null);
 
-        setContentView(layout.activity_player);
+        setContentView(R.layout.activity_player);
 
         ButterKnife.bind(this);
     }
@@ -54,15 +55,15 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStart() {
-        super.onStart();
         LogHelper.d(TAG, "Activity onStart");
+        super.onStart();
         mMediaBrowser.connect();
     }
 
     @Override
     protected void onStop() {
-        super.onStop();
         LogHelper.d(TAG, "Activity onStop");
+        super.onStop();
         mMediaBrowser.disconnect();
     }
 
@@ -70,4 +71,5 @@ public class MainActivity extends Activity {
         MediaController mediaController = new MediaController(this, token);
         setMediaController(mediaController);
     }
+
 }

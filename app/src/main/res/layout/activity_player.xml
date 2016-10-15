@@ -20,27 +20,23 @@
     android:fitsSystemWindows="true">
 
 
-    <LinearLayout
+    <Button
+        android:id="@+id/random_play"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:orientation="vertical">
+        android:layout_gravity="center_horizontal"
+        android:text="@string/label_random_play" />
 
-        <Button
-            android:id="@+id/random_play"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/label_random_play" />
-
-        <Button
-            android:id="@+id/stop"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/label_stop" />
-
-    </LinearLayout>
+    <Button
+        android:id="@+id/stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/random_play"
+        android:layout_alignStart="@+id/random_play"
+        android:layout_below="@+id/random_play"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/label_stop" />
 
 </RelativeLayout>

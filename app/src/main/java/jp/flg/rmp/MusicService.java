@@ -17,17 +17,12 @@ import jp.flg.rmp.Playback.PlaybackServiceCallback;
 
 public class MusicService extends MediaBrowserService implements
         PlaybackServiceCallback {
-    // Extra on MediaSession that contains the Cast device name currently connected to
-    public static final String EXTRA_CONNECTED_CAST = "jp.flg.rmp.CAST_NAME";
     // The action of the incoming Intent indicating that it contains a command
     // to be executed (see {@link #onStartCommand})
     public static final String ACTION_CMD = "jp.flg.rmp.ACTION_CMD";
     // The key in the extras of the incoming Intent indicating the command that
     // should be executed (see {@link #onStartCommand})
     public static final String CMD_NAME = "CMD_NAME";
-    // A value of a CMD_NAME key in the extras of the incoming Intent that
-    // indicates that the music playback should be paused (see {@link #onStartCommand})
-    public static final String CMD_PAUSE = "CMD_PAUSE";
     // A value of a CMD_NAME key that indicates that the music playback should switch
     // to local playback from cast playback.
     public static final String CMD_STOP = "CMD_STOP";
@@ -59,14 +54,15 @@ public class MusicService extends MediaBrowserService implements
 
     @Override
     public int onStartCommand(Intent startIntent, int flags, int startId) {
-        LogHelper.d(TAG, "onStartCommand");
+        LogHelper.d(TAG, "onStartCommand :", startIntent);
 
         if (startIntent != null) {
             String action = startIntent.getAction();
             String command = startIntent.getStringExtra(CMD_NAME);
+            LogHelper.d(TAG, "onStartCommand : ", action, command);
             if (Objects.equals(ACTION_CMD, action)) {
-                if (Objects.equals(CMD_PAUSE, command)) {
-                    mPlayback.handlePauseRequest();
+                if (Objects.equals(CMD_STOP, command)) {
+                    mPlayback.handleStopRequest(null);
                 }
             }
         }

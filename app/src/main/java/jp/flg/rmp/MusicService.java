@@ -1,7 +1,10 @@
 package jp.flg.rmp;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
@@ -13,10 +16,16 @@ import android.support.annotation.NonNull;
 import java.util.List;
 import java.util.Objects;
 
+import io.realm.Realm;
+import io.realm.exceptions.RealmException;
+import jp.flg.rmp.MusicProvider.MusicProviderViewCallback;
 import jp.flg.rmp.Playback.PlaybackServiceCallback;
 
 public class MusicService extends MediaBrowserService implements
-        PlaybackServiceCallback {
+        PlaybackServiceCallback, MusicProviderViewCallback {
+
+    public static final String RMP_SERVICE_VIEW = "jp.flg.rmp.intent.action.RMP_SERVICE_VIEW";
+
     // The action of the incoming Intent indicating that it contains a command
     // to be executed (see {@link #onStartCommand})
     public static final String ACTION_CMD = "jp.flg.rmp.ACTION_CMD";
@@ -30,14 +39,25 @@ public class MusicService extends MediaBrowserService implements
     private static final String TAG = LogHelper.makeLogTag(MusicService.class);
     private MediaSession mSession;
     private Playback mPlayback;
+    private MusicProvider musicProvider;
     private MediaNotificationManager mMediaNotificationManager;
+    private MusicService.MusicServiceReceiver receiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
         LogHelper.d(TAG, "onCreate");
 
-        mPlayback = new Playback(this, new MusicProvider(this), this);
+        Realm.init(this);
+        Realm realm;
+        try {
+            realm = Realm.getDefaultInstance();
+        } catch (RealmException ignored) {
+            return;
+        }
+
+        musicProvider = new MusicProvider(this, realm);
+        mPlayback = new Playback(this, musicProvider, this);
 
         // Start a new MediaSession
         mSession = new MediaSession(this, "MusicService");
@@ -49,6 +69,11 @@ public class MusicService extends MediaBrowserService implements
         mPlayback.updatePlaybackState(null);
 
         mMediaNotificationManager = new MediaNotificationManager(this);
+
+        IntentFilter filter = new IntentFilter(RMP_SERVICE_VIEW);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        receiver = new MusicServiceReceiver();
+        registerReceiver(receiver, filter);
     }
 
 
@@ -76,6 +101,8 @@ public class MusicService extends MediaBrowserService implements
         mPlayback.handleStopRequest(null);
         mMediaNotificationManager.stopNotification();
         mSession.release();
+        musicProvider.onStop();
+        unregisterReceiver(receiver);
     }
 
     @Override
@@ -118,5 +145,17 @@ public class MusicService extends MediaBrowserService implements
     @Override
     public void onMetadataChanged(MediaMetadata metadata) {
         mSession.setMetadata(metadata);
+    }
+
+    @Override
+    public void sendRmpViewBroadcast(Intent broadcastIntent) {
+        sendBroadcast(broadcastIntent);
+    }
+
+    public class MusicServiceReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            musicProvider.intentRmpView();
+        }
     }
 }

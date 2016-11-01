@@ -44,7 +44,6 @@ class Playback implements OnAudioFocusChangeListener,
     private static final int AUDIO_NO_FOCUS_CAN_DUCK = 1;
     // we have full audio focus
     private static final int AUDIO_FOCUSED = 2;
-
     private static final long DOUBLE_CLICK = 400L;
 
     private final Context mContext;
@@ -361,7 +360,7 @@ class Playback implements OnAudioFocusChangeListener,
                 lastClickTime = eventTime;
             }
 
-            final int oldNumClicks = numClicks;
+            int oldNumClicks = numClicks;
             CountDownTimer checkIfDone = new CountDownTimer(DOUBLE_CLICK, 10L) {
                 @Override
                 public void onTick(long millisUntilFinished) {
@@ -399,7 +398,7 @@ class Playback implements OnAudioFocusChangeListener,
         public void onPlayFromSearch(String query, Bundle extras) {
             LogHelper.d(TAG, "onPlayFromUri");
             handleStopRequest(null);
-            mMusicProvider.getRmpData();
+            mMusicProvider.initRmpData();
             handlePlayRequest();
         }
 

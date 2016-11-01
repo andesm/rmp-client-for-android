@@ -1,36 +1,72 @@
 package jp.flg.rmp;
 
 
+import android.content.Intent;
 import android.media.MediaMetadata;
 import android.media.MediaMetadata.Builder;
 
+import com.google.gson.annotations.Expose;
+
 import io.realm.RealmObject;
+import io.realm.annotations.Ignore;
 import io.realm.annotations.PrimaryKey;
+
+import static jp.flg.rmp.MusicProvider.ALBUM_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.ARTIST_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.COUNT_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.RANKING_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.REPEAT_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.SCORE_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.SKIP_VIEW_STRING;
+import static jp.flg.rmp.MusicProvider.TITLE_VIEW_STRING;
 
 public class RandomMusicPlayerData extends RealmObject {
 
+    @Expose
     @PrimaryKey
     private int id;
+    @Expose
     private String owner;
+    @Expose
     private String site;
+    @Expose
     private String file;
+    @Expose
     private String source;
+    @Expose
     private String image;
 
+    @Expose
     private String genre;
+    @Expose
     private String album;
+    @Expose
     private String artist;
+    @Expose
     private String title;
 
+    @Expose
     private long duration;
+    @Expose
     private long trackNumber;
+    @Expose
     private long totalTrackCount;
 
+    @Expose
     private int now;
+    @Expose
     private int count;
+    @Expose
     private int skip;
+    @Expose
     private int repeat;
+    @Expose
     private int score;
+
+    @Ignore
+    private int ranking;
+    @Ignore
+    private boolean update;
 
     void updateRmpData(RandomMusicPlayerData rmpData) {
         owner = rmpData.owner;
@@ -48,15 +84,53 @@ public class RandomMusicPlayerData extends RealmObject {
         trackNumber = rmpData.trackNumber;
         totalTrackCount = rmpData.totalTrackCount;
 
-        now = rmpData.now;
-        count = rmpData.count;
-        skip = rmpData.skip;
-        repeat = rmpData.repeat;
-        score = rmpData.score;
+        update = false;
+        if (now != rmpData.now) {
+            now = rmpData.now;
+            update = true;
+        }
+        if (count < rmpData.count) {
+            count = rmpData.count;
+            update = true;
+        }
+        if (skip != rmpData.skip) {
+            skip = rmpData.skip;
+            update = true;
+        }
+        if (repeat != rmpData.repeat) {
+            repeat = rmpData.repeat;
+            update = true;
+        }
+        if (score != rmpData.score) {
+            score = rmpData.score;
+            update = true;
+        }
     }
 
     int getId() {
         return id;
+    }
+
+    int getNow() {
+        return now;
+    }
+
+    int getScore() {
+        return score;
+    }
+
+    int getRanking() {
+        return ranking;
+    }
+
+    void setRanking(int ranking) {
+        this.ranking = ranking;
+    }
+
+    boolean istUpdate() {
+        boolean r = update;
+        update = false;
+        return r;
     }
 
     String getFile() {
@@ -67,11 +141,22 @@ public class RandomMusicPlayerData extends RealmObject {
         return String.valueOf(id);
     }
 
+    void setBroadcastIntent(Intent broadcastIntent) {
+        broadcastIntent.putExtra(ARTIST_VIEW_STRING, artist);
+        broadcastIntent.putExtra(ALBUM_VIEW_STRING, album);
+        broadcastIntent.putExtra(TITLE_VIEW_STRING, title);
+        broadcastIntent.putExtra(RANKING_VIEW_STRING, String.valueOf(ranking));
+        broadcastIntent.putExtra(SCORE_VIEW_STRING, String.valueOf(score));
+        broadcastIntent.putExtra(SKIP_VIEW_STRING, String.valueOf(skip));
+        broadcastIntent.putExtra(COUNT_VIEW_STRING, String.valueOf(count));
+        broadcastIntent.putExtra(REPEAT_VIEW_STRING, String.valueOf(repeat));
+    }
+
     boolean isPlay() {
         if (now == 0) {
+            now--;
             return true;
         } else {
-            now--;
             return false;
         }
     }

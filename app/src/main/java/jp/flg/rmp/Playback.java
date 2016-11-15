@@ -30,14 +30,14 @@ import java.util.Objects;
 
 class Playback implements OnAudioFocusChangeListener,
         OnCompletionListener, OnPreparedListener, OnErrorListener {
+    public static final String RANDOM_PLAY_STYLE = "RANDOM_PLAY_STYLE";
+    public static final String SORT_PLAY_STYLE = "SORT_PLAY_STYLE";
     private static final String TAG = LogHelper.makeLogTag(Playback.class);
-
     // The volume we set the media player to when we lose audio focus, but are
     // allowed to reduce the volume instead of stopping playback.
     private static final float VOLUME_DUCK = 0.2f;
     // The volume we set the media player when we have audio focus.
     private static final float VOLUME_NORMAL = 1.0f;
-
     // we don't have audio focus, and can't duck (play at a low volume)
     private static final int AUDIO_NO_FOCUS_NO_DUCK = 0;
     // we don't have focus, but can duck (play at a low volume)
@@ -45,7 +45,6 @@ class Playback implements OnAudioFocusChangeListener,
     // we have full audio focus
     private static final int AUDIO_FOCUSED = 2;
     private static final long DOUBLE_CLICK = 400L;
-
     private final Context mContext;
     private final MusicProvider mMusicProvider;
     private final PlaybackServiceCallback mServiceCallback;
@@ -393,12 +392,23 @@ class Playback implements OnAudioFocusChangeListener,
             return numClicks != 0 || super.onMediaButtonEvent(mediaButtonIntent);
         }
 
+        @Override
+        public void onPlayFromMediaId(String mediaId, Bundle extras) {
+            LogHelper.d(TAG, "onPlayFromMediaId");
+            handleStopRequest(null);
+            mMusicProvider.initRmpData(MusicProvider.SHUFFLE_PLAY_STYLE);
+            handlePlayRequest();
+        }
 
         @Override
         public void onPlayFromSearch(String query, Bundle extras) {
             LogHelper.d(TAG, "onPlayFromUri");
             handleStopRequest(null);
-            mMusicProvider.initRmpData();
+            if (query.equals(RANDOM_PLAY_STYLE)) {
+                mMusicProvider.initRmpData(MusicProvider.SHUFFLE_PLAY_STYLE);
+            } else if (query.equals(SORT_PLAY_STYLE)) {
+                mMusicProvider.initRmpData(MusicProvider.SORT_PLAY_STYLE);
+            }
             handlePlayRequest();
         }
 

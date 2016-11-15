@@ -10,6 +10,7 @@ import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
 import android.media.session.MediaSession.Token;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import butterknife.BindView;
@@ -72,16 +73,29 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_player);
         ButterKnife.bind(this);
 
-        Intent broadcastIntent = new Intent();
-        broadcastIntent.setAction(MusicService.RMP_SERVICE_VIEW);
-        broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-        sendBroadcast(broadcastIntent);
+        filter = new IntentFilter(RMP_ACTIVITY_VIEW);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        receiver = new RmpViewReceiver();
+        registerReceiver(receiver, filter);
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
+        unregisterReceiver(receiver);
+    }
+
+    @OnClick(id.sort_play)
+    public void clickSortPlay() {
+        LogHelper.d(TAG, "Sort play");
+        getMediaController().getTransportControls().playFromSearch(Playback.SORT_PLAY_STYLE, null);
     }
 
     @OnClick(id.random_play)
     public void clickRandomPlay() {
         LogHelper.d(TAG, "Random play");
-        getMediaController().getTransportControls().playFromSearch("", null);
+        getMediaController().getTransportControls().playFromSearch(Playback.RANDOM_PLAY_STYLE, null);
     }
 
     @OnClick(id.stop)
@@ -95,11 +109,6 @@ public class MainActivity extends Activity {
         LogHelper.d(TAG, "Activity onStart");
         super.onStart();
         mMediaBrowser.connect();
-        filter = new IntentFilter(RMP_ACTIVITY_VIEW);
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        receiver = new RmpViewReceiver();
-        registerReceiver(receiver, filter);
-
     }
 
     @Override
@@ -107,7 +116,6 @@ public class MainActivity extends Activity {
         LogHelper.d(TAG, "Activity onStop");
         super.onStop();
         mMediaBrowser.disconnect();
-        unregisterReceiver(receiver);
     }
 
     private void connectToSession(Token token) {

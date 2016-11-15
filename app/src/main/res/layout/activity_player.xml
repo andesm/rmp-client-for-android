@@ -13,198 +13,221 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawer_layout"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:columnCount="2"
-    android:fitsSystemWindows="true"
-    android:rowCount="8">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:rowOrderPreserved="true">
 
-
-    <Button
-        android:id="@+id/random_play"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_column="0"
-        android:layout_row="7"
-        android:text="@string/label_random_play" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/stop"
-        android:layout_width="125dp"
-        android:layout_height="match_parent"
-        android:text="@string/label_stop" />
+        <Button
+            android:id="@+id/random_play"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_random_play" />
 
-    <TextView
+        <Button
+            android:id="@+id/sort_play"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_sort_play" />
+
+        <Button
+            android:id="@+id/stop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label_stop" />
+
+    </LinearLayout>
+
+    <GridLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="" />
+        android:columnCount="2">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Next" />
+        <TextView
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:id="@+id/next"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Next" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="All" />
+        <TextView
+            android:id="@+id/next"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            android:text="0" />
 
-    <TextView
-        android:id="@+id/all"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="All" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:id="@+id/all"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="REST Success" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:id="@+id/rest_sucess"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="REST Success" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="REST Error" />
+        <TextView
+            android:id="@+id/rest_sucess"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            android:text="0" />
 
-    <TextView
-        android:id="@+id/rest_error"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="REST Error" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:id="@+id/rest_error"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Artist" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="" />
 
-    <TextView
-        android:id="@+id/artist"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Artist" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Album" />
+        <TextView
+            android:id="@+id/artist"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <TextView
-        android:id="@+id/album"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Album" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Title" />
+        <TextView
+            android:id="@+id/album"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Title" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Ranking" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="" />
 
-    <TextView
-        android:id="@+id/ranking"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Ranking" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Score" />
+        <TextView
+            android:id="@+id/ranking"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:id="@+id/score"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Score" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Skip" />
+        <TextView
+            android:id="@+id/score"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:id="@+id/skip"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Skip" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Count" />
+        <TextView
+            android:id="@+id/skip"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:id="@+id/count"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Count" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Repeat" />
+        <TextView
+            android:id="@+id/count"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
 
-    <TextView
-        android:id="@+id/repeat"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:text="0" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Repeat" />
 
-
-</GridLayout>
+        <TextView
+            android:id="@+id/repeat"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            tools:text="0" />
+    </GridLayout>
+</LinearLayout>

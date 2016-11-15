@@ -127,7 +127,7 @@ public class RandomMusicPlayerData extends RealmObject {
         this.ranking = ranking;
     }
 
-    boolean istUpdate() {
+    boolean isUpdate() {
         boolean r = update;
         update = false;
         return r;

@@ -1,10 +1,7 @@
 package jp.flg.rmp;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
@@ -41,7 +38,6 @@ public class MusicService extends MediaBrowserService implements
     private Playback mPlayback;
     private MusicProvider musicProvider;
     private MediaNotificationManager mMediaNotificationManager;
-    private MusicService.MusicServiceReceiver receiver;
 
     @Override
     public void onCreate() {
@@ -69,11 +65,6 @@ public class MusicService extends MediaBrowserService implements
         mPlayback.updatePlaybackState(null);
 
         mMediaNotificationManager = new MediaNotificationManager(this);
-
-        IntentFilter filter = new IntentFilter(RMP_SERVICE_VIEW);
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        receiver = new MusicServiceReceiver();
-        registerReceiver(receiver, filter);
     }
 
 
@@ -102,7 +93,6 @@ public class MusicService extends MediaBrowserService implements
         mMediaNotificationManager.stopNotification();
         mSession.release();
         musicProvider.onStop();
-        unregisterReceiver(receiver);
     }
 
     @Override
@@ -110,6 +100,7 @@ public class MusicService extends MediaBrowserService implements
                                  Bundle rootHints) {
         LogHelper.d(TAG, "OnGetRoot: clientPackageName=" + clientPackageName,
                 "; clientUid=" + clientUid + " ; rootHints=", rootHints);
+        musicProvider.intentRmpView();
         return new BrowserRoot(MEDIA_ID_ROOT, null);
     }
 
@@ -150,12 +141,5 @@ public class MusicService extends MediaBrowserService implements
     @Override
     public void sendRmpViewBroadcast(Intent broadcastIntent) {
         sendBroadcast(broadcastIntent);
-    }
-
-    public class MusicServiceReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            musicProvider.intentRmpView();
-        }
     }
 }

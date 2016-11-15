@@ -46,6 +46,8 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 class MusicProvider {
+    public static final int SHUFFLE_PLAY_STYLE = 0;
+    public static final int SORT_PLAY_STYLE = 1;
     static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
     static final String NEXT_VIEW_STRING = "next_view";
     static final String ALL_VIEW_STRING = "all_view";
@@ -61,19 +63,21 @@ class MusicProvider {
     static final String REPEAT_VIEW_STRING = "repeat_view";
     private static final String LOG_TAG = LogHelper.makeLogTag(MusicProvider.class);
     private static final String BASE_URL = "http://flg.jp:10080/";
-    private final List<RandomMusicPlayerData> rmpDataList = new ArrayList<>();
+    private final List<RandomMusicPlayerData> rmpDataShuffleList = new ArrayList<>();
+    private final List<RandomMusicPlayerData> rmpDataSortList = new ArrayList<>();
     private final CookieManager cookieManager = new CookieManager();
     private final Retrofit retrofit;
     private final Realm realm;
     private final MusicProviderViewCallback callback;
+    private int playStyle;
     private String csrfToken;
+    @Nullable
     private Iterator<RandomMusicPlayerData> rmpDataIterator;
     @Nullable
     private RandomMusicPlayerData nowMusic;
     private RealmAsyncTask transaction;
     private int restError;
     private int restSuccess;
-
     private final Observer<List<ResponseBody>> restListCallback = new Observer<List<ResponseBody>>() {
         @Override
         public void onCompleted() {
@@ -90,7 +94,6 @@ class MusicProvider {
             restSuccess++;
         }
     };
-
     private final Observer<ResponseBody> restCallback = new Observer<ResponseBody>() {
         @Override
         public void onCompleted() {
@@ -107,6 +110,7 @@ class MusicProvider {
             restSuccess++;
         }
     };
+    private boolean logined;
 
     MusicProvider(MusicProviderViewCallback callback, Realm realm) {
         this.callback = callback;
@@ -147,7 +151,8 @@ class MusicProvider {
         }
     }
 
-    void initRmpData() {
+    void initRmpData(int playStyle) {
+        this.playStyle = playStyle;
         setRmpDataFromRealm();
         setNextNowMusic();
         getRmpDataAsync();
@@ -188,15 +193,15 @@ class MusicProvider {
     }
 
     private void setNextNowMusic() {
-        if (rmpDataList.isEmpty()) {
+        if (rmpDataShuffleList.isEmpty()) {
             nowMusic = null;
             return;
         }
 
-        int size = rmpDataList.size();
+        int size = rmpDataShuffleList.size();
         for (int count = 0; count < size; count++) {
             if (!rmpDataIterator.hasNext()) {
-                rmpDataIterator = rmpDataList.iterator();
+                setRmpDataIterator();
             }
             nowMusic = rmpDataIterator.next();
             if (nowMusic == null) {
@@ -217,10 +222,10 @@ class MusicProvider {
     }
 
     void intentRmpView() {
-        Collections.sort(rmpDataList, new RandomMusicPlayerDataComparator());
+        Collections.sort(rmpDataSortList, new RandomMusicPlayerDataComparator());
         int all = 0;
         int next = 0;
-        for (RandomMusicPlayerData rmp : rmpDataList) {
+        for (RandomMusicPlayerData rmp : rmpDataSortList) {
             all += 1;
             rmp.setRanking(all);
             if (rmp.getNow() == 0) {
@@ -246,7 +251,7 @@ class MusicProvider {
                     setCsrfToken();
                     return retrofit.create(RandomMusicPlayerRESTfulApi.class)
                             .postLogin("/apps/rmp/", csrfToken,
-                                    "andesm", "djangojin", "Log in");
+                                    "admin", "djangoadmin", "Log in");
                 })
                 .flatMap(ResponseBody -> {
                     setCsrfToken();
@@ -262,19 +267,22 @@ class MusicProvider {
                     @Override
                     public void onError(Throwable e) {
                         LogHelper.d(LOG_TAG, "getRmpDataAsync() : ", e);
+                        logined = false;
                     }
 
                     @Override
                     public void onNext(List<RandomMusicPlayerData> rmpDataListResult) {
                         LogHelper.d(LOG_TAG, "Getting from REST completed");
-
+                        logined = true;
                         if (rmpDataListResult.isEmpty()) {
+                            LogHelper.d(LOG_TAG, "DB empty! Post RmpData to the Server");
                             RealmResults<RandomMusicPlayerData> rmpDataRealm =
                                     realm.where(RandomMusicPlayerData.class).findAll();
                             postRmpData(rmpDataRealm);
                         } else {
                             updateDatabaseAsync(rmpDataListResult);
                         }
+
                     }
                 });
     }
@@ -328,9 +336,9 @@ class MusicProvider {
 
     private void postRmpData(List<RandomMusicPlayerData> rmpDataListLocal) {
         Collection<Observable<ResponseBody>> observables =
-                rmpDataListLocal.stream().filter(RandomMusicPlayerData::istUpdate)
+                rmpDataListLocal.stream()
                         .map(rmpData -> retrofit.create(RandomMusicPlayerRESTfulApi.class)
-                                .put(csrfToken, rmpData.getStringId(), realm.copyFromRealm(rmpData)))
+                                .post(csrfToken, realm.copyFromRealm(rmpData)))
                         .collect(Collectors.toCollection(ArrayList::new));
 
         Observable.merge(observables)
@@ -342,8 +350,14 @@ class MusicProvider {
     }
 
     private void putRmpData() {
+        if (!logined) {
+            getRmpDataAsync();
+            restError++;
+            return;
+        }
+
         Collection<Observable<ResponseBody>> observables =
-                rmpDataList.stream().filter(RandomMusicPlayerData::istUpdate)
+                rmpDataShuffleList.stream().filter(RandomMusicPlayerData::isUpdate)
                         .map(rmpData -> retrofit.create(RandomMusicPlayerRESTfulApi.class)
                                 .put(csrfToken, rmpData.getStringId(), realm.copyFromRealm(rmpData)))
                         .collect(Collectors.toCollection(ArrayList::new));
@@ -357,6 +371,12 @@ class MusicProvider {
     }
 
     private void putRmpData(RandomMusicPlayerData rmpData) {
+        if (!logined) {
+            getRmpDataAsync();
+            restError++;
+            return;
+        }
+
         retrofit.create(RandomMusicPlayerRESTfulApi.class)
                 .put(csrfToken, rmpData.getStringId(), realm.copyFromRealm(rmpData))
                 .subscribeOn(Schedulers.io())
@@ -375,10 +395,25 @@ class MusicProvider {
     private void setRmpDataFromRealm() {
         RealmResults<RandomMusicPlayerData> rmpDataRealm =
                 realm.where(RandomMusicPlayerData.class).findAll();
-        rmpDataList.clear();
-        rmpDataList.addAll(rmpDataRealm);
-        Collections.shuffle(rmpDataList);
-        rmpDataIterator = rmpDataList.iterator();
+        rmpDataShuffleList.clear();
+        rmpDataSortList.clear();
+        rmpDataShuffleList.addAll(rmpDataRealm);
+        rmpDataSortList.addAll(rmpDataRealm);
+        setRmpDataIterator();
+    }
+
+    private void setRmpDataIterator() {
+        if (playStyle == SHUFFLE_PLAY_STYLE) {
+            Collections.shuffle(rmpDataShuffleList);
+            rmpDataIterator = rmpDataShuffleList.iterator();
+
+        } else if (playStyle == SORT_PLAY_STYLE) {
+            Collections.sort(rmpDataSortList, new RandomMusicPlayerDataComparator());
+            rmpDataIterator = rmpDataSortList.iterator();
+
+        } else {
+            rmpDataIterator = null;
+        }
     }
 
     @FunctionalInterface

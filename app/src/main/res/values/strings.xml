@@ -7,6 +7,7 @@
     <string name="label_previous">Previous</string>
     <string name="label_next">Next</string>
     <string name="label_random_play">Random Play</string>
+    <string name="label_sort_play">Rank Sort Play</string>
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">Add widget</string>
 </resources>

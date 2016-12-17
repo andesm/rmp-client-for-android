@@ -8,13 +8,11 @@ import android.media.MediaMetadata.Builder;
 import com.google.gson.annotations.Expose;
 
 import io.realm.RealmObject;
-import io.realm.annotations.Ignore;
 import io.realm.annotations.PrimaryKey;
 
 import static jp.flg.rmp.MusicProvider.ALBUM_VIEW_STRING;
 import static jp.flg.rmp.MusicProvider.ARTIST_VIEW_STRING;
 import static jp.flg.rmp.MusicProvider.COUNT_VIEW_STRING;
-import static jp.flg.rmp.MusicProvider.RANKING_VIEW_STRING;
 import static jp.flg.rmp.MusicProvider.REPEAT_VIEW_STRING;
 import static jp.flg.rmp.MusicProvider.SCORE_VIEW_STRING;
 import static jp.flg.rmp.MusicProvider.SKIP_VIEW_STRING;
@@ -63,48 +61,8 @@ public class RandomMusicPlayerData extends RealmObject {
     @Expose
     private int score;
 
-    @Ignore
-    private int ranking;
-    @Ignore
-    private boolean update;
-
-    void updateRmpData(RandomMusicPlayerData rmpData) {
-        owner = rmpData.owner;
-        site = rmpData.site;
-        file = rmpData.file;
-        source = rmpData.source;
-        image = rmpData.image;
-
-        genre = rmpData.genre;
-        album = rmpData.album;
-        artist = rmpData.artist;
-        title = rmpData.title;
-
-        duration = rmpData.duration;
-        trackNumber = rmpData.trackNumber;
-        totalTrackCount = rmpData.totalTrackCount;
-
-        update = false;
-        if (now != rmpData.now) {
-            now = rmpData.now;
-            update = true;
-        }
-        if (count < rmpData.count) {
-            count = rmpData.count;
-            update = true;
-        }
-        if (skip != rmpData.skip) {
-            skip = rmpData.skip;
-            update = true;
-        }
-        if (repeat != rmpData.repeat) {
-            repeat = rmpData.repeat;
-            update = true;
-        }
-        if (score != rmpData.score) {
-            score = rmpData.score;
-            update = true;
-        }
+    boolean isPut(RandomMusicPlayerData rmpData) {
+        return rmpData.count < count || rmpData.skip < skip;
     }
 
     int getId() {
@@ -119,20 +77,6 @@ public class RandomMusicPlayerData extends RealmObject {
         return score;
     }
 
-    int getRanking() {
-        return ranking;
-    }
-
-    void setRanking(int ranking) {
-        this.ranking = ranking;
-    }
-
-    boolean isUpdate() {
-        boolean r = update;
-        update = false;
-        return r;
-    }
-
     String getFile() {
         return file;
     }
@@ -145,7 +89,6 @@ public class RandomMusicPlayerData extends RealmObject {
         broadcastIntent.putExtra(ARTIST_VIEW_STRING, artist);
         broadcastIntent.putExtra(ALBUM_VIEW_STRING, album);
         broadcastIntent.putExtra(TITLE_VIEW_STRING, title);
-        broadcastIntent.putExtra(RANKING_VIEW_STRING, String.valueOf(ranking));
         broadcastIntent.putExtra(SCORE_VIEW_STRING, String.valueOf(score));
         broadcastIntent.putExtra(SKIP_VIEW_STRING, String.valueOf(skip));
         broadcastIntent.putExtra(COUNT_VIEW_STRING, String.valueOf(count));
@@ -154,9 +97,9 @@ public class RandomMusicPlayerData extends RealmObject {
 
     boolean isPlay() {
         if (now == 0) {
-            now--;
             return true;
         } else {
+            now--;
             return false;
         }
     }

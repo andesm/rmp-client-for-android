@@ -26,6 +26,8 @@ public class MainActivity extends Activity {
     TextView nextView;
     @BindView(R.id.all)
     TextView allView;
+    @BindView(id.put_list_count)
+    TextView putListCountView;
     @BindView(R.id.rest_error)
     TextView restSucessView;
     @BindView(R.id.rest_sucess)
@@ -126,6 +128,7 @@ public class MainActivity extends Activity {
     private void setRmpView(Intent intent) {
         nextView.setText(intent.getStringExtra(MusicProvider.NEXT_VIEW_STRING));
         allView.setText(intent.getStringExtra(MusicProvider.ALL_VIEW_STRING));
+        putListCountView.setText(intent.getStringExtra(MusicProvider.PUT_LIST_COUNT_VIEW_STRING));
         restSucessView.setText(intent.getStringExtra(MusicProvider.REST_SUCCESS_VIEW_STRING));
         restErrorView.setText(intent.getStringExtra(MusicProvider.REST_ERROR_VIEW_STRING));
         artistView.setText(intent.getStringExtra(MusicProvider.ARTIST_VIEW_STRING));

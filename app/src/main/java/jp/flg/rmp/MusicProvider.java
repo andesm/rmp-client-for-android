@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.realm.Realm;
@@ -28,6 +29,7 @@ import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.Retrofit.Builder;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
@@ -51,6 +53,7 @@ class MusicProvider {
     static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
     static final String NEXT_VIEW_STRING = "next_view";
     static final String ALL_VIEW_STRING = "all_view";
+    static final String PUT_LIST_COUNT_VIEW_STRING = "put_list_count_view";
     static final String REST_ERROR_VIEW_STRING = "rest_error_view";
     static final String REST_SUCCESS_VIEW_STRING = "rest_success_view";
     static final String ARTIST_VIEW_STRING = "artist_view";
@@ -62,9 +65,14 @@ class MusicProvider {
     static final String COUNT_VIEW_STRING = "count_view";
     static final String REPEAT_VIEW_STRING = "repeat_view";
     private static final String LOG_TAG = LogHelper.makeLogTag(MusicProvider.class);
-    private static final String BASE_URL = "http://flg.jp:10080/";
+    private static final String BASE_URL = "https://flg.jp/";
+    private static final int NO_LOGIN = 0;
+    private static final int TRY_LOGIN = 1;
+    private static final int DONE_LOGIN = 2;
+    //private static final String BASE_URL = "http://flg.jp:10080/";
     private final List<RandomMusicPlayerData> rmpDataShuffleList = new ArrayList<>();
     private final List<RandomMusicPlayerData> rmpDataSortList = new ArrayList<>();
+    private final List<RandomMusicPlayerData> rmpDataPutList = new ArrayList<>();
     private final CookieManager cookieManager = new CookieManager();
     private final Retrofit retrofit;
     private final Realm realm;
@@ -78,39 +86,8 @@ class MusicProvider {
     private RealmAsyncTask transaction;
     private int restError;
     private int restSuccess;
-    private final Observer<List<ResponseBody>> restListCallback = new Observer<List<ResponseBody>>() {
-        @Override
-        public void onCompleted() {
-        }
+    private int loginState;
 
-        @Override
-        public void onError(Throwable e) {
-            LogHelper.d(LOG_TAG, e);
-            restError++;
-        }
-
-        @Override
-        public void onNext(List<ResponseBody> bodys) {
-            restSuccess++;
-        }
-    };
-    private final Observer<ResponseBody> restCallback = new Observer<ResponseBody>() {
-        @Override
-        public void onCompleted() {
-        }
-
-        @Override
-        public void onError(Throwable e) {
-            LogHelper.d(LOG_TAG, e);
-            restError++;
-        }
-
-        @Override
-        public void onNext(ResponseBody body) {
-            restSuccess++;
-        }
-    };
-    private boolean logined;
 
     MusicProvider(MusicProviderViewCallback callback, Realm realm) {
         this.callback = callback;
@@ -126,6 +103,8 @@ class MusicProvider {
                 .addInterceptor(loggingInterceptor)
                 //.addNetworkInterceptor(new StethoInterceptor())
                 .cookieJar(new JavaNetCookieJar(cookieManager))
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
                 .build();
 
         Gson gson = new GsonBuilder()
@@ -225,9 +204,12 @@ class MusicProvider {
         Collections.sort(rmpDataSortList, new RandomMusicPlayerDataComparator());
         int all = 0;
         int next = 0;
+        int ranking = 0;
         for (RandomMusicPlayerData rmp : rmpDataSortList) {
             all += 1;
-            rmp.setRanking(all);
+            if (nowMusic != null && rmp.getId() == nowMusic.getId()) {
+                ranking = all;
+            }
             if (rmp.getNow() == 0) {
                 next += 1;
             }
@@ -237,6 +219,8 @@ class MusicProvider {
         broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
         broadcastIntent.putExtra(NEXT_VIEW_STRING, String.valueOf(next));
         broadcastIntent.putExtra(ALL_VIEW_STRING, String.valueOf(all));
+        broadcastIntent.putExtra(RANKING_VIEW_STRING, String.valueOf(ranking));
+        broadcastIntent.putExtra(PUT_LIST_COUNT_VIEW_STRING, String.valueOf(rmpDataPutList.size()));
         broadcastIntent.putExtra(REST_ERROR_VIEW_STRING, String.valueOf(restSuccess));
         broadcastIntent.putExtra(REST_SUCCESS_VIEW_STRING, String.valueOf(restError));
         if (nowMusic != null) {
@@ -246,14 +230,19 @@ class MusicProvider {
     }
 
     private void getRmpDataAsync() {
+        if (loginState == TRY_LOGIN) {
+            return;
+        }
+        loginState = TRY_LOGIN;
+
         retrofit.create(RandomMusicPlayerRESTfulApi.class).getLogin()
-                .flatMap(ResponseBody -> {
+                .flatMap(Response -> {
                     setCsrfToken();
                     return retrofit.create(RandomMusicPlayerRESTfulApi.class)
                             .postLogin("/apps/rmp/", csrfToken,
                                     "admin", "djangoadmin", "Log in");
                 })
-                .flatMap(ResponseBody -> {
+                .flatMap(Response -> {
                     setCsrfToken();
                     return retrofit.create(RandomMusicPlayerRESTfulApi.class).get(csrfToken);
                 })
@@ -267,13 +256,13 @@ class MusicProvider {
                     @Override
                     public void onError(Throwable e) {
                         LogHelper.d(LOG_TAG, "getRmpDataAsync() : ", e);
-                        logined = false;
+                        loginState = NO_LOGIN;
                     }
 
                     @Override
                     public void onNext(List<RandomMusicPlayerData> rmpDataListResult) {
                         LogHelper.d(LOG_TAG, "Getting from REST completed");
-                        logined = true;
+                        loginState = DONE_LOGIN;
                         if (rmpDataListResult.isEmpty()) {
                             LogHelper.d(LOG_TAG, "DB empty! Post RmpData to the Server");
                             RealmResults<RandomMusicPlayerData> rmpDataRealm =
@@ -311,7 +300,10 @@ class MusicProvider {
                     RandomMusicPlayerData createdRmpData =
                             bgRealm.copyToRealm(rmpRestData);
                 } else {
-                    rmpRealmData.updateRmpData(rmpRestData);
+                    if (rmpRealmData.isPut(rmpRestData)) {
+                        rmpDataPutList.add(rmpRestData);
+                    }
+                    bgRealm.copyToRealmOrUpdate(rmpRestData);
                 }
             }
             LogHelper.d(LOG_TAG, "Storing to Database completed");
@@ -335,7 +327,7 @@ class MusicProvider {
     }
 
     private void postRmpData(List<RandomMusicPlayerData> rmpDataListLocal) {
-        Collection<Observable<ResponseBody>> observables =
+        Collection<Observable<Response<ResponseBody>>> observables =
                 rmpDataListLocal.stream()
                         .map(rmpData -> retrofit.create(RandomMusicPlayerRESTfulApi.class)
                                 .post(csrfToken, realm.copyFromRealm(rmpData)))
@@ -346,20 +338,23 @@ class MusicProvider {
                 .single()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(restListCallback);
+                .subscribe();
     }
 
     private void putRmpData() {
-        if (!logined) {
-            getRmpDataAsync();
-            restError++;
+        if (rmpDataPutList.isEmpty()) {
             return;
         }
 
-        Collection<Observable<ResponseBody>> observables =
-                rmpDataShuffleList.stream().filter(RandomMusicPlayerData::isUpdate)
+        if (loginState != DONE_LOGIN) {
+            getRmpDataAsync();
+            return;
+        }
+
+        Collection<Observable<Response<ResponseBody>>> observables =
+                rmpDataPutList.stream()
                         .map(rmpData -> retrofit.create(RandomMusicPlayerRESTfulApi.class)
-                                .put(csrfToken, rmpData.getStringId(), realm.copyFromRealm(rmpData)))
+                                .put(csrfToken, rmpData.getStringId(), rmpData))
                         .collect(Collectors.toCollection(ArrayList::new));
 
         Observable.merge(observables)
@@ -367,22 +362,37 @@ class MusicProvider {
                 .single()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(restListCallback);
+                .subscribe(new Observer<List<Response<ResponseBody>>>() {
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        LogHelper.d(LOG_TAG, e);
+                    }
+
+                    @Override
+                    public void onNext(List<Response<ResponseBody>> rs) {
+                        for (Response r : rs) {
+                            LogHelper.d(LOG_TAG, r.isSuccessful(), ", ", r.code(), ", ", r.raw().request().url());
+                            if (r.isSuccessful()) {
+                                restSuccess++;
+                            } else {
+                                restError++;
+                            }
+                        }
+                        rmpDataPutList.clear();
+                        intentRmpView();
+                    }
+                });
     }
 
     private void putRmpData(RandomMusicPlayerData rmpData) {
-        if (!logined) {
-            getRmpDataAsync();
-            restError++;
-            return;
-        }
-
-        retrofit.create(RandomMusicPlayerRESTfulApi.class)
-                .put(csrfToken, rmpData.getStringId(), realm.copyFromRealm(rmpData))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(restCallback);
+        rmpDataPutList.add(realm.copyFromRealm(rmpData));
+        putRmpData();
     }
+
 
     private void setCsrfToken() {
         cookieManager.getCookieStore().getCookies().stream().
@@ -426,24 +436,24 @@ class MusicProvider {
         Observable<List<RandomMusicPlayerData>> get(@Header("X-CSRFToken") String csrf);
 
         @PUT("/apps/rmp/music/{id}/")
-        Observable<ResponseBody> put(@Header("X-CSRFToken") String csrf,
-                                     @Path("id") String id,
-                                     @Body RandomMusicPlayerData rmpData);
+        Observable<Response<ResponseBody>> put(@Header("X-CSRFToken") String csrf,
+                                               @Path("id") String id,
+                                               @Body RandomMusicPlayerData rmpData);
 
         @POST("/apps/rmp/music/")
-        Observable<ResponseBody> post(@Header("X-CSRFToken") String csrf,
-                                      @Body RandomMusicPlayerData rmpData);
+        Observable<Response<ResponseBody>> post(@Header("X-CSRFToken") String csrf,
+                                                @Body RandomMusicPlayerData rmpData);
 
         @FormUrlEncoded
         @POST("/apps/rmp/api-auth/login/")
-        Observable<ResponseBody> postLogin(@Field("next") String next,
-                                           @Field("csrfmiddlewaretoken") String csrf,
-                                           @Field("username") String username,
-                                           @Field("password") String password,
-                                           @Field("submit") String submit);
+        Observable<Response<ResponseBody>> postLogin(@Field("next") String next,
+                                                     @Field("csrfmiddlewaretoken") String csrf,
+                                                     @Field("username") String username,
+                                                     @Field("password") String password,
+                                                     @Field("submit") String submit);
 
         @GET("/apps/rmp/api-auth/login/")
-        Observable<ResponseBody> getLogin();
+        Observable<Response<ResponseBody>> getLogin();
     }
 
     private static class RandomMusicPlayerDataComparator

@@ -1,6 +1,7 @@
 package jp.flg.rmp;
 
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaMetadata;
 import android.media.MediaMetadata.Builder;
@@ -20,6 +21,7 @@ import static jp.flg.rmp.MusicProvider.TITLE_VIEW_STRING;
 
 public class RandomMusicPlayerData extends RealmObject {
 
+    private static final String TAG = LogHelper.makeLogTag(RandomMusicPlayerData.class);
     @Expose
     @PrimaryKey
     private int id;
@@ -96,7 +98,8 @@ public class RandomMusicPlayerData extends RealmObject {
     }
 
     boolean isPlay() {
-        if (now == 0) {
+        LogHelper.d(TAG, "Rmp Data: " + now + "," + score + "," + title);
+        if (now <= 0) {
             return true;
         } else {
             now--;
@@ -126,6 +129,7 @@ public class RandomMusicPlayerData extends RealmObject {
         score = count + repeat - (now + skip);
     }
 
+    @SuppressLint("WrongConstant")
     MediaMetadata toMediaMetadata() {
         return new Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, getStringId())

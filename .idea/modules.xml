@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/RandomMusicPlayer.iml" filepath="$PROJECT_DIR$/RandomMusicPlayer.iml" />
+      <module fileurl="file://C:\Users\andes\StudioProjects\rmp-client-for-android\RandomMusicPlayer.iml" filepath="C:\Users\andes\StudioProjects\rmp-client-for-android\RandomMusicPlayer.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rmp-client-for-android.iml" filepath="$PROJECT_DIR$/rmp-client-for-android.iml" />
     </modules>
   </component>
 </project>

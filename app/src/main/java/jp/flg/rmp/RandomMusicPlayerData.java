@@ -97,12 +97,15 @@ public class RandomMusicPlayerData extends RealmObject {
         broadcastIntent.putExtra(REPEAT_VIEW_STRING, String.valueOf(repeat));
     }
 
+    void nowPlay() {
+        now--;
+    }
+
     boolean isPlay() {
         LogHelper.d(TAG, "Rmp Data: " + now + "," + score + "," + title);
         if (now <= 0) {
             return true;
         } else {
-            now--;
             return false;
         }
     }

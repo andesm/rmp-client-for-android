@@ -190,10 +190,10 @@ class MusicProvider {
                     + "/rmp/"
                     + nowMusic.getFile();
             File file = new File(source);
-            realm.beginTransaction();
-            boolean isPlay = nowMusic.isPlay();
-            realm.commitTransaction();
-            if (file.exists() && isPlay) {
+            if (file.exists() && nowMusic.isPlay()) {
+                realm.beginTransaction();
+                nowMusic.nowPlay();
+                realm.commitTransaction();
                 intentRmpView();
                 return;
             }

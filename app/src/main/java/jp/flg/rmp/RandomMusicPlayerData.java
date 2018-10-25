@@ -64,7 +64,7 @@ public class RandomMusicPlayerData extends RealmObject {
     private int score;
 
     boolean isPut(RandomMusicPlayerData rmpData) {
-        return rmpData.count < count || rmpData.skip < skip;
+        return  rmpData.count < count || rmpData.skip < skip;
     }
 
     int getId() {

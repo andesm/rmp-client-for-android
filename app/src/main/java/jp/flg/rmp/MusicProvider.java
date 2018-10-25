@@ -299,13 +299,13 @@ class MusicProvider {
                     rmpRealmData.deleteFromRealm();
                     RandomMusicPlayerData createdRmpData =
                             bgRealm.copyToRealm(rmpRestData);
+                } else if (rmpRealmData.isPut(rmpRestData)) {
+                    rmpDataPutList.add(rmpRealmData);
                 } else {
-                    if (rmpRealmData.isPut(rmpRestData)) {
-                        rmpDataPutList.add(rmpRestData);
-                    }
                     bgRealm.copyToRealmOrUpdate(rmpRestData);
                 }
             }
+
             LogHelper.d(LOG_TAG, "Storing to Database completed");
 
             RealmResults<RandomMusicPlayerData> rmpDataRealm =

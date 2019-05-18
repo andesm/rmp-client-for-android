@@ -68,7 +68,7 @@ class Playback implements OnAudioFocusChangeListener,
                     Intent newIntent = new Intent(context, MusicService.class);
                     newIntent.setAction(MusicService.ACTION_CMD);
                     newIntent.putExtra(MusicService.CMD_NAME, MusicService.CMD_STOP);
-                    mContext.startService(newIntent);
+                    mContext.startForegroundService(newIntent);
                 }
             }
         }

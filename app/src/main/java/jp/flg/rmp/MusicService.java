@@ -115,7 +115,7 @@ public class MusicService extends MediaBrowserService implements
         if (!mSession.isActive()) {
             mSession.setActive(true);
         }
-        startService(new Intent(getApplicationContext(), MusicService.class));
+        startForegroundService(new Intent(getApplicationContext(), MusicService.class));
     }
 
     @Override

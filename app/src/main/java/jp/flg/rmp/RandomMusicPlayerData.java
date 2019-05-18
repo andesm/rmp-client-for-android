@@ -64,7 +64,7 @@ public class RandomMusicPlayerData extends RealmObject {
     private int score;
 
     boolean isPut(RandomMusicPlayerData rmpData) {
-        return  rmpData.count < count || rmpData.skip < skip;
+        return rmpData.count < count ||  rmpData.skip < skip;
     }
 
     int getId() {
@@ -97,8 +97,10 @@ public class RandomMusicPlayerData extends RealmObject {
         broadcastIntent.putExtra(REPEAT_VIEW_STRING, String.valueOf(repeat));
     }
 
-    void nowPlay() {
-        now--;
+    void nowDec() {
+        if (0 < now) {
+            now--;
+        }
     }
 
     boolean isPlay() {

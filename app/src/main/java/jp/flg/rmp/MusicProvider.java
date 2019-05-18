@@ -177,26 +177,33 @@ class MusicProvider {
             return;
         }
 
-        int size = rmpDataShuffleList.size();
-        for (int count = 0; count < size; count++) {
-            if (!rmpDataIterator.hasNext()) {
-                setRmpDataIterator();
-            }
-            nowMusic = rmpDataIterator.next();
-            if (nowMusic == null) {
-                return;
-            }
-            String source = Environment.getExternalStorageDirectory()
+        while (true) {
+            int size = rmpDataShuffleList.size();
+            for (int count = 0; count < size; count++) {
+                if (!rmpDataIterator.hasNext()) {
+                    setRmpDataIterator();
+                }
+                nowMusic = rmpDataIterator.next();
+                if (nowMusic == null) {
+                    return;
+                }
+                String source = Environment.getExternalStorageDirectory()
                     + "/rmp/"
                     + nowMusic.getFile();
-            File file = new File(source);
-            if (file.exists() && nowMusic.isPlay()) {
-                realm.beginTransaction();
-                nowMusic.nowPlay();
-                realm.commitTransaction();
-                intentRmpView();
-                return;
+                File file = new File(source);
+                if (file.exists() && nowMusic.isPlay()) {
+                    intentRmpView();
+                    return;
+                }
             }
+            RealmResults<RandomMusicPlayerData> rmpDataRealm =
+                    realm.where(RandomMusicPlayerData.class).findAll();
+            realm.beginTransaction();
+            for (RandomMusicPlayerData rmp : rmpDataRealm) {
+                rmp.nowDec();
+            }
+            realm.commitTransaction();
+            setRmpDataFromRealm();
         }
     }
 
@@ -297,10 +304,8 @@ class MusicProvider {
                             rmpRealmData.getId() + ", " +
                             rmpRealmData.getFile());
                     rmpRealmData.deleteFromRealm();
-                    RandomMusicPlayerData createdRmpData =
-                            bgRealm.copyToRealm(rmpRestData);
                 } else if (rmpRealmData.isPut(rmpRestData)) {
-                    rmpDataPutList.add(rmpRealmData);
+                    rmpDataPutList.add(bgRealm.copyFromRealm(rmpRealmData));
                 } else {
                     bgRealm.copyToRealmOrUpdate(rmpRestData);
                 }

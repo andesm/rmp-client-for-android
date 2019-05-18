@@ -3,10 +3,12 @@ package jp.flg.rmp;
 import android.app.Notification;
 import android.app.Notification.Action.Builder;
 import android.app.Notification.MediaStyle;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
@@ -36,6 +38,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     private static final String ACTION_PREV = "jp.flg.rmp.prev";
     private static final String ACTION_NEXT = "jp.flg.rmp.next";
     private static final String ACTION_STOP = "jp.flg.rmp.stop";
+    private static final String CHANNEL_GENERAL_ID = "rmp";
     private static final String TAG = LogHelper.makeLogTag(MediaNotificationManager.class);
     private static final String EXTRA_START_FULLSCREEN =
             "jp.flg.rmp.EXTRA_START_FULLSCREEN";
@@ -122,6 +125,9 @@ public class MediaNotificationManager extends BroadcastReceiver {
         // Cancel all notifications to handle the case where the Service was killed and
         // restarted by the system.
         mNotificationManager.cancelAll();
+
+        NotificationChannel channel = new NotificationChannel(CHANNEL_GENERAL_ID, "RMP Notifications", NotificationManager.IMPORTANCE_LOW);
+        mNotificationManager.createNotificationChannel(channel);
     }
 
     private int getThemeColor(Context context, int attribute, int defaultColor) {
@@ -199,7 +205,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
                 Intent newIntent = new Intent(context, MusicService.class);
                 newIntent.setAction(MusicService.ACTION_CMD);
                 newIntent.putExtra(MusicService.CMD_NAME, MusicService.CMD_STOP);
-                mService.startService(newIntent);
+                mService.startForegroundService(newIntent);
                 break;
             default:
                 LogHelper.w(TAG, "Unknown intent ignored. Action=", action);
@@ -241,7 +247,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
             return null;
         }
 
-        Notification.Builder notificationBuilder = new Notification.Builder(mService);
+        Notification.Builder notificationBuilder = new Notification.Builder(mService, CHANNEL_GENERAL_ID);
 
         // If skip to previous action is enabled
         if ((mPlaybackState.getActions() & PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0L) {
